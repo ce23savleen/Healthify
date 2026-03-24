@@ -16,9 +16,11 @@ interface User {
 interface AuthContextType {
   user: User | null
   isLoggedIn: boolean
+  isDoctorOnboarded: boolean
   login: (user: User) => void
   logout: () => void
   updateUser: (user: Partial<User>) => void
+  completeDoctorOnboarding: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -26,6 +28,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isDoctorOnboarded, setIsDoctorOnboarded] = useState(false)
 
   // Load user from localStorage on mount
   useEffect(() => {
@@ -34,6 +37,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = JSON.parse(savedUser)
       setUser(userData)
       setIsLoggedIn(true)
+
+      // Check doctor onboarding status
+      if (userData.userType === "doctor") {
+        const verification = localStorage.getItem("doctorVerification")
+        setIsDoctorOnboarded(!!verification)
+      }
     }
   }, [])
 
@@ -46,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null)
     setIsLoggedIn(false)
+    setIsDoctorOnboarded(false)
     localStorage.removeItem("currentUser")
   }
 
@@ -57,7 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  return <AuthContext.Provider value={{ user, isLoggedIn, login, logout, updateUser }}>{children}</AuthContext.Provider>
+  const completeDoctorOnboarding = () => {
+    setIsDoctorOnboarded(true)
+  }
+
+  return <AuthContext.Provider value={{ user, isLoggedIn, isDoctorOnboarded, login, logout, updateUser, completeDoctorOnboarding }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
