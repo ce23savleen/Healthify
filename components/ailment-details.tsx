@@ -457,7 +457,7 @@ export default function AilmentDetails({ slug }: { slug: string }) {
                       {(selectedRemedy.steps || [1, 2, 3].map((_: number, i: number) => `Step ${i + 1} of the remedy preparation`)).map(
                         (step: string, index: number) => (
                           <div key={index} className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                            <div className="shrink-0 w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
                               {index + 1}
                             </div>
                             <p className="text-foreground pt-1">{step}</p>
@@ -470,7 +470,7 @@ export default function AilmentDetails({ slug }: { slug: string }) {
                   {/* Important Disclaimer */}
                   <div className="p-4 border-l-4 border-orange-500 bg-orange-50 rounded">
                     <div className="flex gap-3">
-                      <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                      <AlertCircle className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
                       <div>
                         <p className="font-bold text-orange-900 text-sm">Important:</p>
                         <p className="text-orange-800 text-sm">
