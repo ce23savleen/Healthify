@@ -3,14 +3,15 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Leaf, LogOut, Download, Heart, Plus, FileText } from "lucide-react"
+import { Leaf, LogOut, Download, Heart, Plus, FileText, Activity } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
+import HealthAnalytics from "@/components/health-analytics"
 
 export default function UserDashboard() {
   const { user, logout, updateUser } = useAuth()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<"profile" | "remedies" | "saved" | "blogs">("profile")
+  const [activeTab, setActiveTab] = useState<"profile" | "health" | "remedies" | "saved" | "blogs">("profile")
   const [isEditing, setIsEditing] = useState(false)
   const [userData, setUserData] = useState({
     name: user?.name || "User",
@@ -173,6 +174,15 @@ export default function UserDashboard() {
                   Personal Information
                 </button>
                 <button
+                  onClick={() => setActiveTab("health")}
+                  className={`w-full text-left px-4 py-2 rounded-lg transition flex items-center gap-2 ${
+                    activeTab === "health" ? "bg-teal-600 text-white" : "text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Activity className="w-4 h-4" />
+                  Health Analytics
+                </button>
+                <button
                   onClick={() => setActiveTab("remedies")}
                   className={`w-full text-left px-4 py-2 rounded-lg transition ${
                     activeTab === "remedies" ? "bg-teal-600 text-white" : "text-foreground hover:bg-muted"
@@ -300,6 +310,9 @@ export default function UserDashboard() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Health Analytics Tab */}
+            {activeTab === "health" && <HealthAnalytics />}
 
             {/* My Remedies Tab */}
             {activeTab === "remedies" && (
