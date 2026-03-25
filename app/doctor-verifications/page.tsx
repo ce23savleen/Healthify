@@ -4,9 +4,12 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Leaf, ArrowLeft, CheckCircle, Clock, Filter } from "lucide-react"
+import { Leaf, ArrowLeft, CheckCircle, Clock, Filter, ShieldCheck, BadgeCheck } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
+import Navigation from "@/components/navigation"
+import Footer from "@/components/footer"
+import mockAilmentsData from "@/data/mockAilmentsData"
 
 interface Remedy {
   id: number
@@ -15,17 +18,19 @@ interface Remedy {
   description: string
   author: string
   date: string
-  status: "pending" | "approved" | "rejected"
   likes: number
+  verifiedBy: string[]
 }
 
 export default function DoctorVerificationsPage() {
   const { user, isLoggedIn } = useAuth()
   const router = useRouter()
   const [remedies, setRemedies] = useState<Remedy[]>([])
-  const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved" | "rejected">("all")
+  const [feedFilter, setFeedFilter] = useState<"pending" | "endorsed" | "all">("pending")
   const [filterAilment, setFilterAilment] = useState<string>("all")
   const [sortBy, setSortBy] = useState<"recent" | "likes">("recent")
+
+  const currentDoctorId = user?.id || ""
 
   useEffect(() => {
     if (!isLoggedIn || user?.userType !== "doctor") {
@@ -33,83 +38,94 @@ export default function DoctorVerificationsPage() {
       return
     }
 
+    // Load remedies from mock data + localStorage
+    const allRemedies: Remedy[] = []
+
+    // Pull from mockAilmentsData
+    Object.values(mockAilmentsData).forEach((ailment) => {
+      ailment.remedies.forEach((r) => {
+        allRemedies.push({
+          id: r.id,
+          title: r.title,
+          ailment: ailment.name,
+          description: r.description,
+          author: r.author,
+          date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+          likes: r.likes,
+          verifiedBy: [...r.verifiedBy],
+        })
+      })
+    })
+
+    // Also load from localStorage (user-submitted)
     const savedRemedies = JSON.parse(localStorage.getItem("pendingVerifications") || "[]")
-    const approvedRemedies = JSON.parse(localStorage.getItem("approvedRemedies") || "[]")
-    const allRemedies = [...savedRemedies, ...approvedRemedies]
+    savedRemedies.forEach((r: any) => {
+      allRemedies.push({
+        ...r,
+        verifiedBy: r.verifiedBy || [],
+      })
+    })
+
     setRemedies(allRemedies)
   }, [isLoggedIn, user, router])
 
+  // Filter logic: "Pending" = doctor's ID NOT in verifiedBy
   const filteredRemedies = remedies
-    .filter((remedy) => filterStatus === "all" || remedy.status === filterStatus)
+    .filter((remedy) => {
+      if (feedFilter === "pending") return !remedy.verifiedBy.includes(currentDoctorId)
+      if (feedFilter === "endorsed") return remedy.verifiedBy.includes(currentDoctorId)
+      return true
+    })
     .filter((remedy) => filterAilment === "all" || remedy.ailment === filterAilment)
     .sort((a, b) => {
       if (sortBy === "likes") return b.likes - a.likes
-      return new Date(b.date).getTime() - new Date(a.date).getTime()
+      return 0 // default order
     })
 
   const ailments = Array.from(new Set(remedies.map((r) => r.ailment)))
 
-  const handleApprove = (id: number) => {
-    const remedy = remedies.find((r) => r.id === id)
-    if (remedy) {
-      const updated = remedies.map((r) => (r.id === id ? { ...r, status: "approved" as const } : r))
-      setRemedies(updated)
-
-      const pending = updated.filter((r) => r.status === "pending")
-      const approved = updated.filter((r) => r.status === "approved")
-
-      localStorage.setItem("pendingVerifications", JSON.stringify(pending))
-      localStorage.setItem("approvedRemedies", JSON.stringify(approved))
-    }
-  }
-
-  const handleReject = (id: number) => {
-    const updated = remedies.filter((r) => r.id !== id)
-    setRemedies(updated)
-
-    const pending = updated.filter((r) => r.status === "pending")
-    localStorage.setItem("pendingVerifications", JSON.stringify(pending))
+  const handleEndorse = (id: number) => {
+    setRemedies((prev) =>
+      prev.map((r) =>
+        r.id === id && !r.verifiedBy.includes(currentDoctorId)
+          ? { ...r, verifiedBy: [...r.verifiedBy, currentDoctorId] }
+          : r
+      )
+    )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-primary text-primary-foreground py-6 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <Leaf className="w-6 h-6" />
-            <span>Healthyify</span>
-          </Link>
-          <Link href="/">
-            <Button className="text-primary-foreground border-primary-foreground hover:bg-primary-foreground hover:text-primary bg-transparent border">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
-            </Button>
-          </Link>
-        </div>
-      </header>
+    <main className="min-h-screen bg-background">
+      <Navigation />
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-4xl font-bold text-primary mb-8">Remedy Verifications</h1>
+        <h1 className="text-4xl font-bold text-primary mb-2">Remedy Verifications</h1>
+        <p className="text-muted-foreground mb-8">
+          Review and endorse community-submitted remedies to build trust and credibility.
+        </p>
+
+        {/* Feed Tabs */}
+        <div className="flex gap-3 mb-6">
+          {(["pending", "endorsed", "all"] as const).map((tab) => (
+            <Button
+              key={tab}
+              onClick={() => setFeedFilter(tab)}
+              className={`${
+                feedFilter === tab
+                  ? "bg-teal-600 hover:bg-teal-700 text-white"
+                  : "bg-card border border-border text-foreground hover:bg-muted"
+              }`}
+            >
+              {tab === "pending" ? "⏳ Pending Review" : tab === "endorsed" ? "✓ Endorsed by You" : "All Remedies"}
+            </Button>
+          ))}
+        </div>
 
         {/* Filters */}
         <Card className="mb-8">
           <CardContent className="pt-6">
-            <div className="grid md:grid-cols-4 gap-4">
-              <div>
-                <label className="text-sm font-semibold text-foreground block mb-2">Status</label>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value as any)}
-                  className="w-full px-4 py-2 rounded-lg border border-border bg-card text-foreground"
-                >
-                  <option value="all">All</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </div>
+            <div className="grid md:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-semibold text-foreground block mb-2">Ailment</label>
                 <select
@@ -139,7 +155,6 @@ export default function DoctorVerificationsPage() {
               <div className="flex items-end">
                 <Button
                   onClick={() => {
-                    setFilterStatus("all")
                     setFilterAilment("all")
                     setSortBy("recent")
                   }}
@@ -159,73 +174,75 @@ export default function DoctorVerificationsPage() {
           {filteredRemedies.length === 0 ? (
             <Card>
               <CardContent className="pt-6 text-center">
-                <p className="text-muted-foreground">No remedies to verify with current filters.</p>
+                <p className="text-muted-foreground">
+                  {feedFilter === "pending"
+                    ? "No remedies awaiting your review. You've endorsed everything!"
+                    : "No remedies match current filters."}
+                </p>
               </CardContent>
             </Card>
           ) : (
-            filteredRemedies.map((remedy) => (
-              <Card key={remedy.id} className="hover:shadow-lg transition">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-xl mb-2">{remedy.title}</CardTitle>
-                      <p className="text-teal-600 font-semibold text-sm">{remedy.ailment}</p>
-                    </div>
-                    <span
-                      className={`text-xs px-3 py-1 rounded-full font-semibold flex items-center gap-1 ${
-                        remedy.status === "pending"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : remedy.status === "approved"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {remedy.status === "pending" ? (
-                        <>
-                          <Clock className="w-3 h-3" />
-                          Pending
-                        </>
-                      ) : remedy.status === "approved" ? (
-                        <>
-                          <CheckCircle className="w-3 h-3" />
-                          Approved
-                        </>
+            filteredRemedies.map((remedy) => {
+              const endorsed = remedy.verifiedBy.includes(currentDoctorId)
+              const count = remedy.verifiedBy.length
+
+              return (
+                <Card key={remedy.id} className="hover:shadow-lg transition">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-xl mb-2">{remedy.title}</CardTitle>
+                        <p className="text-teal-600 font-semibold text-sm">{remedy.ailment}</p>
+                      </div>
+                      {/* Verification badge */}
+                      {count >= 3 ? (
+                        <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-full text-xs font-bold whitespace-nowrap shadow-sm">
+                          <ShieldCheck className="w-4 h-4" />
+                          Verified by {count} Professionals
+                        </span>
+                      ) : count >= 1 ? (
+                        <span className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-full text-xs font-semibold whitespace-nowrap">
+                          <BadgeCheck className="w-3.5 h-3.5" />
+                          {count} Endorsement{count > 1 ? "s" : ""}
+                        </span>
                       ) : (
-                        "Rejected"
+                        <span className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full text-xs font-semibold whitespace-nowrap">
+                          <Clock className="w-3.5 h-3.5" />
+                          Awaiting Review
+                        </span>
                       )}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-foreground mb-4">{remedy.description}</p>
-                  <div className="flex justify-between items-center text-sm text-muted-foreground mb-4">
-                    <span>By {remedy.author}</span>
-                    <span>{remedy.date}</span>
-                    <span>{remedy.likes} likes</span>
-                  </div>
-                  {remedy.status === "pending" && (
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleApprove(remedy.id)}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        onClick={() => handleReject(remedy.id)}
-                        variant="outline"
-                        className="bg-transparent text-red-600 hover:text-red-700"
-                      >
-                        Reject
-                      </Button>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-foreground mb-4">{remedy.description}</p>
+                    <div className="flex justify-between items-center text-sm text-muted-foreground mb-4">
+                      <span>By {remedy.author}</span>
+                      <span>{remedy.date}</span>
+                      <span>{remedy.likes} likes</span>
+                    </div>
+                    <div className="flex gap-3">
+                      {endorsed ? (
+                        <Button disabled className="bg-emerald-100 text-emerald-700 cursor-default hover:bg-emerald-100">
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          ✓ You endorsed this
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => handleEndorse(remedy.id)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                          +1 Endorse this Remedy
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })
           )}
         </div>
       </div>
-    </div>
+      <Footer />
+    </main>
   )
 }
