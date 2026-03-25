@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Heart, MessageCircle, Share2, Calendar, User } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
+import Navigation from "@/components/navigation"
+import Footer from "@/components/footer"
 
 const ayurvedicBlogs = [
   {
@@ -143,7 +145,8 @@ export default function BlogsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-20">
+    <main className="min-h-screen bg-background">
+      <Navigation />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {!selectedBlog ? (
           <>
@@ -350,6 +353,7 @@ export default function BlogsPage() {
           </div>
         )}
       </div>
-    </div>
+      <Footer />
+    </main>
   )
 }
