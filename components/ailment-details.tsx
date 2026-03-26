@@ -3,14 +3,15 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Heart, MessageCircle, Share2, Bookmark, AlertCircle, X } from "lucide-react"
+import { Heart, MessageCircle, Share2, Bookmark, AlertCircle, X, ShieldCheck, BadgeCheck } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
+import mockAilmentsData, { type MockAilment, type MockRemedy } from "@/data/mockAilmentsData"
 import ailmentDetailsData from "@/data/ailment-details"
 import remediesData from "@/data/remedies"
 
 export default function AilmentDetails({ slug }: { slug: string }) {
-  const { isLoggedIn } = useAuth()
+  const { isLoggedIn, user } = useAuth()
   const [likedRemedies, setLikedRemedies] = useState<number[]>([])
   const [savedRemedies, setSavedRemedies] = useState<number[]>([])
   const [showCommentForm, setShowCommentForm] = useState<number | null>(null)
@@ -20,17 +21,70 @@ export default function AilmentDetails({ slug }: { slug: string }) {
   const [showNotification, setShowNotification] = useState<{ type: string; message: string } | null>(null)
   const [selectedRemedy, setSelectedRemedy] = useState<any>(null)
   const [userSubmittedRemedies, setUserSubmittedRemedies] = useState<any[]>([])
+  const [endorsedRemedies, setEndorsedRemedies] = useState<number[]>([])
 
-  const ailmentKey = slug.toLowerCase().replace(/-/g, "-")
-  const ailment = ailmentDetailsData[ailmentKey] || ailmentDetailsData.acne
+  const ailmentKey = slug.toLowerCase().replace(/\s+/g, "-")
+  const isDoctor = user?.userType === "doctor"
+  const currentDoctorId = user?.id || ""
+
+  // Try mock data first, then fall back to legacy data
+  const mockAilment = mockAilmentsData[ailmentKey]
+  const legacyAilment = ailmentDetailsData[ailmentKey]
+
+  // Build ailment info from whichever source is available
+  const ailment = mockAilment
+    ? {
+        name: mockAilment.name,
+        description: mockAilment.description,
+        causes: mockAilment.causes,
+        symptoms: mockAilment.symptoms,
+        prevention: mockAilment.prevention,
+      }
+    : legacyAilment
+      ? legacyAilment
+      : null
+
+  // If no data found, show error
+  if (!ailment) {
+    return (
+      <section className="py-12 bg-background">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-3xl font-bold text-primary mb-4">Ailment Not Found</h1>
+          <p className="text-muted-foreground mb-6">
+            We don&apos;t have information for &ldquo;{slug.replace(/-/g, " ")}&rdquo; yet.
+          </p>
+          <Link href="/browse-ailments">
+            <Button className="bg-teal-600 hover:bg-teal-700">Browse All Ailments</Button>
+          </Link>
+        </div>
+      </section>
+    )
+  }
 
   useEffect(() => {
     const submitted = JSON.parse(localStorage.getItem("userSubmittedRemedies") || "[]")
-    const filtered = submitted.filter((remedy: any) => remedy.ailment.toLowerCase() === ailment.name.toLowerCase())
+    const filtered = submitted.filter(
+      (remedy: any) => remedy.ailment.toLowerCase() === ailment.name.toLowerCase()
+    )
     setUserSubmittedRemedies(filtered)
   }, [ailment.name])
 
-  const defaultRemedies = remediesData[ailmentKey] || remediesData.acne
+  // Build remedies from mock data or legacy data
+  const buildRemedies = () => {
+    if (mockAilment) {
+      return mockAilment.remedies.map((r) => ({
+        ...r,
+        isVerified: r.verifiedBy.length >= 1,
+      }))
+    }
+    const legacyRemedies = remediesData[ailmentKey] || []
+    return legacyRemedies.map((r: any) => ({
+      ...r,
+      verifiedBy: r.isVerified ? ["doc_legacy"] : [],
+    }))
+  }
+
+  const defaultRemedies = buildRemedies()
   const allRemedies = [...defaultRemedies, ...userSubmittedRemedies]
   const remedies = allRemedies.sort((a, b) => b.likes - a.likes)
 
@@ -38,6 +92,10 @@ export default function AilmentDetails({ slug }: { slug: string }) {
     const saved = localStorage.getItem("savedRemedies")
     if (saved) {
       setSavedRemedies(JSON.parse(saved))
+    }
+    const endorsed = localStorage.getItem("endorsedRemedies")
+    if (endorsed) {
+      setEndorsedRemedies(JSON.parse(endorsed))
     }
   }, [])
 
@@ -75,12 +133,26 @@ export default function AilmentDetails({ slug }: { slug: string }) {
               ailment: ailment.name,
               author: remedies.find((r) => r.id === remedyId)?.author || "Unknown",
               date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
-            }),
+            })
           )
           showSuccessNotification("Remedy saved successfully")
         }
         return updated
       })
+    })
+  }
+
+  const handleEndorse = (remedyId: number) => {
+    handleProtectedAction(() => {
+      if (!isDoctor) return
+      if (endorsedRemedies.includes(remedyId)) return
+
+      setEndorsedRemedies((prev) => {
+        const updated = [...prev, remedyId]
+        localStorage.setItem("endorsedRemedies", JSON.stringify(updated))
+        return updated
+      })
+      showSuccessNotification("Remedy endorsed successfully!")
     })
   }
 
@@ -100,7 +172,6 @@ export default function AilmentDetails({ slug }: { slug: string }) {
   const handleShare = (remedyTitle: string) => {
     handleProtectedAction(() => {
       const shareText = `Check out this remedy: "${remedyTitle}" on Healthyify - Discover trusted natural health remedies!`
-
       if (navigator.share) {
         navigator
           .share({
@@ -119,6 +190,17 @@ export default function AilmentDetails({ slug }: { slug: string }) {
   const showSuccessNotification = (message: string) => {
     setShowNotification({ type: "success", message })
     setTimeout(() => setShowNotification(null), 3000)
+  }
+
+  const getVerifiedCount = (remedy: any): number => {
+    if (remedy.verifiedBy) return remedy.verifiedBy.length
+    return 0
+  }
+
+  const hasCurrentDoctorEndorsed = (remedy: any): boolean => {
+    if (endorsedRemedies.includes(remedy.id)) return true
+    if (remedy.verifiedBy && remedy.verifiedBy.includes(currentDoctorId)) return true
+    return false
   }
 
   return (
@@ -187,86 +269,135 @@ export default function AilmentDetails({ slug }: { slug: string }) {
         <div>
           <h2 className="text-2xl font-bold text-primary mb-6">Recommended Remedies</h2>
           <div className="space-y-6">
-            {remedies.map((remedy) => (
-              <Card
-                key={remedy.id}
-                className="hover:shadow-lg transition cursor-pointer"
-                onClick={() => setSelectedRemedy(remedy)}
-              >
-                <CardContent className="pt-6">
-                  <div className="mb-4">
-                    <h3 className="text-xl font-bold text-foreground mb-2">{remedy.title}</h3>
-                    <p className="text-teal-600 font-semibold text-sm">{ailment.name}</p>
-                  </div>
+            {remedies.map((remedy) => {
+              const verifiedCount = getVerifiedCount(remedy)
+              const doctorEndorsed = hasCurrentDoctorEndorsed(remedy)
 
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                    <span>By {remedy.author}</span>
-                    <span>•</span>
-                    <span>
-                      {new Date().toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" })}
-                    </span>
-                  </div>
+              return (
+                <Card
+                  key={remedy.id}
+                  className="hover:shadow-lg transition cursor-pointer"
+                  onClick={() => setSelectedRemedy(remedy)}
+                >
+                  <CardContent className="pt-6">
+                    <div className="mb-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-xl font-bold text-foreground mb-2">{remedy.title}</h3>
+                          <p className="text-teal-600 font-semibold text-sm">{ailment.name}</p>
+                        </div>
+                        {/* Verified badge */}
+                        {verifiedCount >= 3 ? (
+                          <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-full text-xs font-bold whitespace-nowrap shadow-sm">
+                            <ShieldCheck className="w-4 h-4" />
+                            Verified by {verifiedCount} Professionals
+                          </span>
+                        ) : verifiedCount >= 1 ? (
+                          <span className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-full text-xs font-semibold whitespace-nowrap">
+                            <BadgeCheck className="w-3.5 h-3.5" />
+                            Verified by {verifiedCount} Professional{verifiedCount > 1 ? "s" : ""}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
 
-                  <p className="text-foreground text-sm line-clamp-2 mb-4">{remedy.description}</p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                      <span>By {remedy.author}</span>
+                      <span>•</span>
+                      <span>
+                        {new Date().toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" })}
+                      </span>
+                    </div>
 
-                  <div className="flex flex-wrap items-center gap-3">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleLike(remedy.id)
-                      }}
-                      className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold transition ${
-                        likedRemedies.includes(remedy.id)
-                          ? "bg-red-500 text-white"
-                          : "bg-red-100 text-red-600 hover:bg-red-200"
-                      }`}
-                    >
-                      <Heart className={`w-4 h-4 ${likedRemedies.includes(remedy.id) ? "fill-current" : ""}`} />
-                      <span>{remedy.likes + (likedRemedies.includes(remedy.id) ? 1 : 0)}</span>
-                    </button>
+                    <p className="text-foreground text-sm line-clamp-2 mb-4">{remedy.description}</p>
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleSaveRemedy(remedy.id, remedy.title)
-                      }}
-                      className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold transition ${
-                        savedRemedies.includes(remedy.id)
-                          ? "bg-teal-100 text-teal-600"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      }`}
-                    >
-                      <Bookmark className={`w-4 h-4 ${savedRemedies.includes(remedy.id) ? "fill-current" : ""}`} />
-                      <span>Save</span>
-                    </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleLike(remedy.id)
+                        }}
+                        className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold transition ${
+                          likedRemedies.includes(remedy.id)
+                            ? "bg-red-500 text-white"
+                            : "bg-red-100 text-red-600 hover:bg-red-200"
+                        }`}
+                      >
+                        <Heart className={`w-4 h-4 ${likedRemedies.includes(remedy.id) ? "fill-current" : ""}`} />
+                        <span>{remedy.likes + (likedRemedies.includes(remedy.id) ? 1 : 0)}</span>
+                      </button>
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleProtectedAction(() =>
-                          setShowCommentForm(showCommentForm === remedy.id ? null : remedy.id),
-                        )
-                      }}
-                      className="flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      <span>{comments[remedy.id]?.length || 0}</span>
-                    </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleSaveRemedy(remedy.id, remedy.title)
+                        }}
+                        className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold transition ${
+                          savedRemedies.includes(remedy.id)
+                            ? "bg-teal-100 text-teal-600"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        <Bookmark className={`w-4 h-4 ${savedRemedies.includes(remedy.id) ? "fill-current" : ""}`} />
+                        <span>Save</span>
+                      </button>
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleShare(remedy.title)
-                      }}
-                      className="flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
-                    >
-                      <Share2 className="w-4 h-4" />
-                      <span>Share</span>
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleProtectedAction(() =>
+                            setShowCommentForm(showCommentForm === remedy.id ? null : remedy.id)
+                          )
+                        }}
+                        className="flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        <span>{comments[remedy.id]?.length || 0}</span>
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleShare(remedy.title)
+                        }}
+                        className="flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+                      >
+                        <Share2 className="w-4 h-4" />
+                        <span>Share</span>
+                      </button>
+
+                      {/* Continuous Endorsement for Doctors */}
+                      {isDoctor && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleEndorse(remedy.id)
+                          }}
+                          disabled={doctorEndorsed}
+                          className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold transition ml-auto ${
+                            doctorEndorsed
+                              ? "bg-emerald-100 text-emerald-700 cursor-default"
+                              : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200"
+                          }`}
+                        >
+                          {doctorEndorsed ? (
+                            <>
+                              <BadgeCheck className="w-4 h-4" />
+                              <span>✓ You endorsed this</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>+1</span>
+                              <span>Endorse this Remedy</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
 
           {/* Add Remedy Button */}
@@ -295,6 +426,12 @@ export default function AilmentDetails({ slug }: { slug: string }) {
                   <div>
                     <CardTitle className="text-3xl mb-2">{selectedRemedy.title}</CardTitle>
                     <p className="text-teal-600 font-semibold">{ailment.name}</p>
+                    {getVerifiedCount(selectedRemedy) >= 3 && (
+                      <span className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-full text-sm font-bold shadow-sm">
+                        <ShieldCheck className="w-4 h-4" />
+                        Verified by {getVerifiedCount(selectedRemedy)} Professionals
+                      </span>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -317,21 +454,23 @@ export default function AilmentDetails({ slug }: { slug: string }) {
                   <div>
                     <h4 className="text-lg font-bold text-foreground mb-3">Steps</h4>
                     <div className="space-y-3">
-                      {[1, 2, 3].map((step) => (
-                        <div key={step} className="flex items-start gap-3">
-                          <div className="flex-shrink-0 w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                            {step}
+                      {(selectedRemedy.steps || [1, 2, 3].map((_: number, i: number) => `Step ${i + 1} of the remedy preparation`)).map(
+                        (step: string, index: number) => (
+                          <div key={index} className="flex items-start gap-3">
+                            <div className="shrink-0 w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                              {index + 1}
+                            </div>
+                            <p className="text-foreground pt-1">{step}</p>
                           </div>
-                          <p className="text-foreground pt-1">Step {step} of the remedy preparation</p>
-                        </div>
-                      ))}
+                        )
+                      )}
                     </div>
                   </div>
 
                   {/* Important Disclaimer */}
                   <div className="p-4 border-l-4 border-orange-500 bg-orange-50 rounded">
                     <div className="flex gap-3">
-                      <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                      <AlertCircle className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
                       <div>
                         <p className="font-bold text-orange-900 text-sm">Important:</p>
                         <p className="text-orange-800 text-sm">
@@ -373,7 +512,7 @@ export default function AilmentDetails({ slug }: { slug: string }) {
                     <button
                       onClick={() =>
                         handleProtectedAction(() =>
-                          setShowCommentForm(showCommentForm === selectedRemedy.id ? null : selectedRemedy.id),
+                          setShowCommentForm(showCommentForm === selectedRemedy.id ? null : selectedRemedy.id)
                         )
                       }
                       className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
@@ -389,6 +528,31 @@ export default function AilmentDetails({ slug }: { slug: string }) {
                       <Share2 className="w-5 h-5" />
                       <span>Share</span>
                     </button>
+
+                    {/* Endorsement for doctors in detail view */}
+                    {isDoctor && (
+                      <button
+                        onClick={() => handleEndorse(selectedRemedy.id)}
+                        disabled={hasCurrentDoctorEndorsed(selectedRemedy)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
+                          hasCurrentDoctorEndorsed(selectedRemedy)
+                            ? "bg-emerald-100 text-emerald-700 cursor-default"
+                            : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200"
+                        }`}
+                      >
+                        {hasCurrentDoctorEndorsed(selectedRemedy) ? (
+                          <>
+                            <BadgeCheck className="w-5 h-5" />
+                            <span>✓ You endorsed this</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>+1</span>
+                            <span>Endorse this Remedy</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
 
                   {/* Comments Section */}

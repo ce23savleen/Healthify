@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Leaf, LogOut, Calendar, Users, CheckCircle, Clock, BookOpen, Bookmark } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
+import DoctorRouteGuard from "@/components/doctor-route-guard"
 
 export default function DoctorDashboard() {
   const { user, logout } = useAuth()
@@ -120,6 +121,7 @@ export default function DoctorDashboard() {
   ]
 
   return (
+    <DoctorRouteGuard>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-primary text-primary-foreground py-6 border-b border-border">
@@ -535,5 +537,6 @@ export default function DoctorDashboard() {
         </div>
       </div>
     </div>
+    </DoctorRouteGuard>
   )
 }
