@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, X } from "lucide-react"
@@ -37,10 +38,23 @@ const ailmentsData: Record<string, string[]> = {
 }
 
 export default function AilmentBrowser() {
-  const [selectedLetter, setSelectedLetter] = useState<string | null>(null)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const selectedLetter = searchParams.get("letter")?.toUpperCase() || null
   const [searchTerm, setSearchTerm] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [notFoundMessage, setNotFoundMessage] = useState("")
+
+  const setSelectedLetter = useCallback(
+    (letter: string | null) => {
+      if (letter) {
+        router.push(`?letter=${letter}`, { scroll: false })
+      } else {
+        router.push("?", { scroll: false })
+      }
+    },
+    [router]
+  )
 
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")
 

@@ -56,7 +56,7 @@ export default function UserOnboarding() {
     <main className="min-h-screen bg-background">
       <OnboardingNavbar />
 
-      <section className="relative bg-gradient-to-br from-teal-50 to-blue-50 min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-16">
+      <section className="relative bg-linear-to-br from-teal-50 to-blue-50 min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-16">
         {/* Decorative background element */}
         <div className="absolute top-8 right-8 opacity-10">
           <Leaf className="w-48 h-48 text-secondary" />
