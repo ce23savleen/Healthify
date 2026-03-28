@@ -33,6 +33,28 @@ export default function LoginPage() {
     e.preventDefault()
     if (!validate()) return
 
+    // --- THE DEMO ADMIN HACK START ---
+    if (email === "admin@healthify.com" && password === "admin123") {
+      const adminData = {
+        id: "admin-001",
+        name: "Super Admin",
+        email: email,
+        userType: "admin", 
+        phone: "-",
+        age: 99,
+        location: "System",
+      }
+      
+      // We use 'as any' here just in case your AuthContext is strictly 
+      // typed to only accept "user" | "doctor" right now.
+      login(adminData as any) 
+      
+      // Change this URL if your admin page is named something else!
+      router.push("/admin/dashboard") 
+      return // Stops the rest of the login function from running
+    }
+    // --- THE DEMO ADMIN HACK END ---
+
     const userData = {
       id: Math.random().toString(36).substr(2, 9),
       name: email.split("@")[0],
