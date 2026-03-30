@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { MessageCircle, Send } from 'lucide-react'
+import { MessageCircle, Send, Star, MapPin, Briefcase, ExternalLink } from 'lucide-react'
 import { doctorsData, getBestDoctor, getDoctorsBySpecialty, type Doctor } from '@/data/doctors'
 import remediesData from '@/data/remedies'
 
 interface Message {
   role: 'user' | 'bot'
   content: string
+  doctorProfile?: Doctor
 }
 
 const quickOptions = [
@@ -102,8 +103,9 @@ function getBotResponse(message: string): { response: string; shouldNavigate: bo
   if (msg.includes('find') && msg.includes('doctor')) {
     const bestDoctor = getBestDoctor()
     return {
-      response: `I found our highest-rated doctor for you:\n\n**${bestDoctor.name}**\nSpecialty: ${bestDoctor.specialty}\nExperience: ${bestDoctor.experience}\nRating: ${bestDoctor.rating}⭐\n\nWould you like to consult with this doctor?`,
-      shouldNavigate: false
+      response: `I found our highest-rated doctor for you:`,
+      shouldNavigate: false,
+      doctorInfo: bestDoctor
     }
   }
 
@@ -167,6 +169,54 @@ function getBotResponse(message: string): { response: string; shouldNavigate: bo
   }
 }
 
+function DoctorProfileCard({ doctor, onViewProfile }: { doctor: Doctor; onViewProfile: (doctor: Doctor) => void }) {
+  return (
+    <div className="mt-2 rounded-lg border border-teal-200 bg-gradient-to-br from-teal-50 to-white shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="bg-teal-600 px-3 py-2">
+        <h4 className="text-white font-bold text-sm">{doctor.name}</h4>
+        <p className="text-teal-100 text-xs">{doctor.specialty}</p>
+      </div>
+      {/* Body */}
+      <div className="p-3 space-y-2">
+        {/* Rating */}
+        <div className="flex items-center gap-1">
+          {[...Array(5)].map((_, i) => (
+            <Star
+              key={i}
+              className={`w-3.5 h-3.5 ${i < Math.floor(doctor.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+            />
+          ))}
+          <span className="text-xs font-semibold text-slate-700 ml-1">{doctor.rating}</span>
+          <span className="text-xs text-slate-500">({doctor.reviews} reviews)</span>
+        </div>
+        {/* Details */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-xs text-slate-600">
+            <MapPin className="w-3 h-3 text-teal-600" />
+            {doctor.location}
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-600">
+            <Briefcase className="w-3 h-3 text-teal-600" />
+            {doctor.experience} experience
+          </div>
+        </div>
+        {/* Bio */}
+        <p className="text-xs text-slate-600 leading-relaxed">{doctor.bio}</p>
+        {/* CTA */}
+        <Button
+          onClick={() => onViewProfile(doctor)}
+          size="sm"
+          className="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs h-8 gap-1"
+        >
+          <ExternalLink className="w-3 h-3" />
+          View Full Profile
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 export default function Chatbot() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -194,7 +244,7 @@ export default function Chatbot() {
     // Bot response
     setTimeout(() => {
       const botResult = getBotResponse(msgToSend)
-      const botResponse: Message = { role: 'bot', content: botResult.response }
+      const botResponse: Message = { role: 'bot', content: botResult.response, doctorProfile: botResult.doctorInfo }
       setMessages(prev => [...prev, botResponse])
 
       // Check for navigation
@@ -235,6 +285,15 @@ export default function Chatbot() {
                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[85%] p-3 rounded-lg whitespace-pre-line text-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-slate-100 text-slate-800'}`}>
                     {msg.content}
+                    {msg.doctorProfile && (
+                      <DoctorProfileCard
+                        doctor={msg.doctorProfile}
+                        onViewProfile={(doctor) => {
+                          router.push(`/consult-doctor?doctorId=${doctor.id}`)
+                          setOpen(false)
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
               ))}
