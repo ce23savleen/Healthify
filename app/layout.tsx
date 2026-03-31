@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Inter, Poppins } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/lib/auth-context"
+import Chatbot from "@/components/chatbot"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 const poppins = Poppins({
@@ -27,6 +28,7 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <div className="pt-16">{children}</div>
+          <Chatbot />
         </AuthProvider>
       </body>
     </html>

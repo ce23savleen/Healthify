@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Star, MapPin, Briefcase, Award, Calendar } from "lucide-react"
@@ -94,7 +94,7 @@ const doctorsData = [
   },
 ]
 
-export default function DoctorConsultation() {
+export default function DoctorConsultation({ initialDoctorId }: { initialDoctorId?: number }) {
   const [selectedDoctor, setSelectedDoctor] = useState<(typeof doctorsData)[0] | null>(null)
   const [showBooking, setShowBooking] = useState(false)
   const [bookingData, setBookingData] = useState({
@@ -103,6 +103,16 @@ export default function DoctorConsultation() {
     ailment: "",
     description: "",
   })
+
+  // Auto-select doctor if navigated from chatbot with doctorId
+  useEffect(() => {
+    if (initialDoctorId) {
+      const doctor = doctorsData.find((d) => d.id === initialDoctorId)
+      if (doctor) {
+        setSelectedDoctor(doctor)
+      }
+    }
+  }, [initialDoctorId])
 
   const handleBookAppointment = (e: React.FormEvent) => {
     e.preventDefault()
