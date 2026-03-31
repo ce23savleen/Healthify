@@ -16,20 +16,20 @@ export default function Navigation() {
 
   const navLinks = isDoctor
     ? [
-        { href: "/browse-ailments", label: "Browse Ailments" },
-        { href: "/explore-community", label: "Explore Community" },
-        { href: "/blogs", label: "Blogs" },
-        { href: "/doctor-verifications", label: "Verifications" },
-        { href: "/doctor-directory", label: "Doctors" },
-      ]
+      { href: "/browse-ailments", label: "Browse Ailments" },
+      { href: "/explore-community", label: "Explore Community" },
+      { href: "/blogs", label: "Blogs" },
+      { href: "/doctor-verifications", label: "Verifications" },
+      { href: "/doctor-directory", label: "Doctors" },
+    ]
     : [
-        { href: "/browse-ailments", label: "Browse Ailments" },
-        { href: "/explore-community", label: "Explore Community" },
-        { href: "/blogs", label: "Blogs" },
-        { href: "/consult-doctor", label: "Consult a Doctor" },
-        { href: "/about", label: "About" },
-        { href: "/contact", label: "Contact" },
-      ]
+      { href: "/browse-ailments", label: "Browse Ailments" },
+      { href: "/explore-community", label: "Explore Community" },
+      { href: "/blogs", label: "Blogs" },
+      { href: "/consult-doctor", label: "Consult a Doctor" },
+      { href: "/about", label: "About" },
+      { href: "/contact", label: "Contact" },
+    ]
 
   const handleLogout = () => {
     logout()
