@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Heart, MessageCircle, Share2, Calendar, User } from "lucide-react"
+import { Heart, MessageCircle, Share2, Calendar, User, Clock, ArrowLeft, BookOpen, Feather, TrendingUp } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import Navigation from "@/components/navigation"
 import Footer from "@/components/footer"
@@ -22,6 +22,7 @@ const ayurvedicBlogs = [
       "The three doshas are the fundamental energies that govern all biological and psychological functions in the body. Vata represents movement and space, Pitta represents transformation and fire, while Kapha represents structure and stability. Understanding your unique dosha constitution is the first step towards achieving optimal health through Ayurvedic practices.",
     likes: 234,
     comments: 18,
+    readTime: "5 min read",
   },
   {
     id: 2,
@@ -35,6 +36,7 @@ const ayurvedicBlogs = [
       "Ayurveda teaches us that eating seasonally is crucial for maintaining health. In spring, favor light and warming foods. Summer calls for cooling foods like coconut and cucumber. Autumn requires grounding foods, while winter needs warming and nourishing meals. This seasonal approach helps your body adapt naturally to environmental changes.",
     likes: 189,
     comments: 12,
+    readTime: "4 min read",
   },
   {
     id: 3,
@@ -49,6 +51,7 @@ const ayurvedicBlogs = [
       "Turmeric, known as the golden spice, has been used in Ayurveda for thousands of years. Its active compound, curcumin, has powerful anti-inflammatory and antioxidant properties. From golden milk to turmeric-infused foods, this versatile spice can help reduce inflammation, boost immunity, and support overall wellness.",
     likes: 456,
     comments: 34,
+    readTime: "6 min read",
   },
   {
     id: 4,
@@ -63,6 +66,7 @@ const ayurvedicBlogs = [
       "Dinacharya, or daily routine, is a cornerstone of Ayurvedic wellness. It includes practices like oil massage, tongue scraping, meditation, and yoga. By following a consistent daily routine aligned with your dosha, you can improve digestion, boost energy, enhance mental clarity, and prevent disease.",
     likes: 312,
     comments: 25,
+    readTime: "7 min read",
   },
   {
     id: 5,
@@ -77,6 +81,7 @@ const ayurvedicBlogs = [
       "Pranayama, the practice of controlled breathing, is fundamental to Ayurvedic wellness. Different breathing techniques balance different doshas. Meditation calms the mind and reduces stress. Together, these practices enhance mental clarity, emotional balance, and spiritual growth.",
     likes: 278,
     comments: 21,
+    readTime: "5 min read",
   },
   {
     id: 6,
@@ -91,6 +96,7 @@ const ayurvedicBlogs = [
       "Panchakarma is a comprehensive detoxification and rejuvenation therapy in Ayurveda. It includes five main procedures designed to eliminate toxins and restore balance. This powerful treatment can help reset your system, improve digestion, boost immunity, and promote longevity.",
     likes: 389,
     comments: 28,
+    readTime: "8 min read",
   },
 ]
 
@@ -144,214 +150,485 @@ export default function BlogsPage() {
     setCommentText("")
   }
 
+  const categoryColors: Record<string, { bg: string; text: string; border: string }> = {
+    "Ayurveda Basics": { bg: "#ecfdf5", text: "#047857", border: "#a7f3d0" },
+    "Nutrition": { bg: "#fefce8", text: "#a16207", border: "#fde68a" },
+    "Herbal Remedies": { bg: "#fef2f2", text: "#b91c1c", border: "#fecaca" },
+    "Lifestyle": { bg: "#eff6ff", text: "#1d4ed8", border: "#bfdbfe" },
+    "Mind-Body": { bg: "#faf5ff", text: "#7c3aed", border: "#ddd6fe" },
+    "Detox": { bg: "#fff7ed", text: "#c2410c", border: "#fed7aa" },
+  }
+
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen" style={{ background: "#f8fdf9" }}>
       <Navigation />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {!selectedBlog ? (
+      
+      {/* Background Section with Image */}
+      <div className="relative">
+        {!selectedBlog && (
           <>
-            {/* Header */}
-            <div className="mb-12">
-              <h1 className="text-4xl font-bold text-primary mb-4">Ayurvedic Wellness Blog</h1>
-              <p className="text-lg text-muted-foreground">
-                Discover ancient wisdom and modern insights on natural health and wellness
-              </p>
-            </div>
-
-            {/* Category Filter */}
-            <div className="flex gap-3 mb-8 flex-wrap">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  onClick={() => setFilter(category)}
-                  className={`${
-                    filter === category
-                      ? "bg-teal-600 hover:bg-teal-700 text-white"
-                      : "bg-card border border-border text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                </Button>
-              ))}
-            </div>
-
-            {/* Blogs Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredBlogs.map((blog) => (
-                <Card
-                  key={blog.id}
-                  className="hover:shadow-lg transition cursor-pointer overflow-hidden"
-                  onClick={() => setSelectedBlog(blog)}
-                >
-                  {/* Blog Image */}
-                  <div className="h-48 overflow-hidden bg-muted">
-                    <img
-                      src={blog.image || "/placeholder.svg"}
-                      alt={blog.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  <CardContent className="pt-6">
-                    {/* Category Badge */}
-                    <span className="inline-block px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-xs font-semibold mb-3">
-                      {blog.category}
-                    </span>
-
-                    {/* Title */}
-                    <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-2">{blog.title}</h3>
-
-                    {/* Excerpt */}
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{blog.excerpt}</p>
-
-                    {/* Author and Date */}
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4 pb-4 border-b border-border">
-                      <div className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        {blog.author}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {blog.date}
-                      </div>
-                    </div>
-
-                    {/* Engagement Stats */}
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleLike(blog.id)
-                        }}
-                        className="flex items-center gap-1 hover:text-teal-600 transition"
-                      >
-                        <Heart
-                          className={`w-4 h-4 ${likedBlogs.includes(blog.id) ? "fill-teal-600 text-teal-600" : ""}`}
-                        />
-                        {blog.likes + (likedBlogs.includes(blog.id) ? 1 : 0)}
-                      </button>
-                      <div className="flex items-center gap-1">
-                        <MessageCircle className="w-4 h-4" />
-                        {blog.comments + (blogComments[blog.id]?.length || 0)}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </>
-        ) : (
-          /* Blog Detail View */
-          <div className="max-w-3xl mx-auto">
-            <Button onClick={() => setSelectedBlog(null)} variant="outline" className="mb-6">
-              ← Back to Blogs
-            </Button>
-
-            <Card>
-              {/* Blog Image */}
-              <div className="h-96 overflow-hidden bg-muted">
+            {/* Hero with Background Image */}
+            <div className="relative overflow-hidden" style={{ minHeight: "380px" }}>
+              {/* Background Image */}
+              <div className="absolute inset-0">
                 <img
-                  src={selectedBlog.image || "/placeholder.svg"}
-                  alt={selectedBlog.title}
+                  src="/blog-ayurveda-background.png"
+                  alt=""
                   className="w-full h-full object-cover"
+                  style={{ filter: "blur(1px)" }}
                 />
+                {/* Overlay Gradient */}
+                <div className="absolute inset-0" style={{
+                  background: "linear-gradient(135deg, rgba(6, 78, 59, 0.88) 0%, rgba(4, 120, 87, 0.82) 40%, rgba(5, 150, 105, 0.78) 70%, rgba(13, 148, 136, 0.82) 100%)"
+                }} />
+              </div>
+              
+              {/* Decorative Light Effects */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-10" style={{
+                  background: "radial-gradient(circle, white 0%, transparent 60%)"
+                }} />
+                <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full opacity-5" style={{
+                  background: "radial-gradient(circle, white 0%, transparent 60%)"
+                }} />
               </div>
 
-              <CardContent className="pt-8">
-                {/* Category and Meta */}
-                <div className="flex items-center gap-4 mb-4 pb-4 border-b border-border">
-                  <span className="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm font-semibold">
-                    {selectedBlog.category}
-                  </span>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <User className="w-4 h-4" />
-                    {selectedBlog.author}
+              {/* Hero Content */}
+              <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm">
+                    <Feather className="w-5 h-5 text-amber-300" />
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    {selectedBlog.date}
+                  <span className="text-emerald-200 text-sm font-medium tracking-wide uppercase">Ancient Wisdom, Modern Insights</span>
+                </div>
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-5" style={{ letterSpacing: "-0.02em" }}>
+                  Ayurvedic Wellness Blog
+                </h1>
+                <p className="text-lg md:text-xl text-emerald-100/80 max-w-2xl leading-relaxed">
+                  Discover ancient wisdom and modern insights on natural health and wellness, curated by expert Ayurvedic practitioners
+                </p>
+
+                {/* Stats Row */}
+                <div className="flex flex-wrap gap-6 mt-10">
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)" }}>
+                    <BookOpen className="w-4 h-4 text-emerald-200" />
+                    <span className="text-white font-semibold text-sm">6 Articles</span>
                   </div>
-                </div>
-
-                {/* Title */}
-                <h1 className="text-4xl font-bold text-foreground mb-6">{selectedBlog.title}</h1>
-
-                {/* Content */}
-                <p className="text-lg text-foreground leading-relaxed mb-8">{selectedBlog.content}</p>
-
-                {/* Engagement */}
-                <div className="flex items-center gap-6 pt-6 border-t border-border mb-8">
-                  <button
-                    onClick={() => toggleLike(selectedBlog.id)}
-                    className="flex items-center gap-2 px-4 py-2 bg-pink-50 rounded-lg text-muted-foreground hover:text-teal-600 transition"
-                  >
-                    <Heart
-                      className={`w-5 h-5 ${likedBlogs.includes(selectedBlog.id) ? "fill-teal-600 text-teal-600" : ""}`}
-                    />
-                    <span className="font-semibold">
-                      {selectedBlog.likes + (likedBlogs.includes(selectedBlog.id) ? 1 : 0)}
-                    </span>
-                  </button>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg text-muted-foreground hover:text-teal-600 transition">
-                    <MessageCircle className="w-5 h-5" />
-                    <span className="font-semibold">
-                      {selectedBlog.comments + (blogComments[selectedBlog.id]?.length || 0)} comments
-                    </span>
-                  </button>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg text-muted-foreground hover:text-teal-600 transition">
-                    <Share2 className="w-5 h-5" />
-                    <span>Share</span>
-                  </button>
-                </div>
-
-                {/* Comments Section */}
-                <div className="border-t border-border pt-8">
-                  <h2 className="text-2xl font-bold text-foreground mb-6">Comments</h2>
-
-                  {/* Comment Input */}
-                  {isLoggedIn ? (
-                    <div className="mb-8">
-                      <textarea
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        placeholder="Share your thoughts..."
-                        className="w-full px-4 py-3 rounded-lg border border-border bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-teal-600 resize-none"
-                        rows={4}
-                      />
-                      <Button
-                        onClick={handlePostComment}
-                        disabled={!commentText.trim()}
-                        className="mt-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold"
-                      >
-                        Post Comment
-                      </Button>
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground mb-8">Please log in to post a comment.</p>
-                  )}
-
-                  {/* Comments List */}
-                  <div className="space-y-4">
-                    {(blogComments[selectedBlog.id] || []).map((comment) => (
-                      <div key={comment.id} className="p-4 bg-muted rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-semibold text-foreground">{comment.author}</p>
-                          <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
-                        </div>
-                        <p className="text-foreground">{comment.text}</p>
-                      </div>
-                    ))}
-                    {(!blogComments[selectedBlog.id] || blogComments[selectedBlog.id].length === 0) && (
-                      <p className="text-muted-foreground text-center py-8">
-                        No comments yet. Be the first to comment!
-                      </p>
-                    )}
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)" }}>
+                    <TrendingUp className="w-4 h-4 text-emerald-200" />
+                    <span className="text-white font-semibold text-sm">6 Categories</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)" }}>
+                    <Heart className="w-4 h-4 text-emerald-200" />
+                    <span className="text-white font-semibold text-sm">1,868 Likes</span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </div>
+          </>
         )}
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          {!selectedBlog ? (
+            <>
+              {/* Category Filter */}
+              <div className="flex gap-3 mb-10 flex-wrap" style={{ marginTop: "-2rem" }}>
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setFilter(category)}
+                    className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-300"
+                    style={
+                      filter === category
+                        ? {
+                            background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
+                            color: "white",
+                            boxShadow: "0 4px 14px rgba(5, 150, 105, 0.4)",
+                            transform: "translateY(-1px)",
+                          }
+                        : {
+                            background: "rgba(255,255,255,0.9)",
+                            color: "#064e3b",
+                            border: "1px solid #d1fae5",
+                            backdropFilter: "blur(8px)",
+                            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                          }
+                    }
+                  >
+                    {category === "all" ? "All" : category}
+                  </button>
+                ))}
+              </div>
+
+              {/* Featured Blog (First Blog Larger) */}
+              {filteredBlogs.length > 0 && (
+                <div className="mb-10">
+                  <Card
+                    className="group overflow-hidden border-0 cursor-pointer"
+                    onClick={() => setSelectedBlog(filteredBlogs[0])}
+                    style={{
+                      background: "rgba(255,255,255,0.9)",
+                      backdropFilter: "blur(12px)",
+                      borderRadius: "1.25rem",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04)",
+                      transition: "all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = "0 12px 40px rgba(5, 150, 105, 0.15), 0 4px 12px rgba(0,0,0,0.08)"
+                      e.currentTarget.style.transform = "translateY(-4px)"
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04)"
+                      e.currentTarget.style.transform = "translateY(0)"
+                    }}
+                  >
+                    <div className="grid md:grid-cols-2">
+                      {/* Featured Image */}
+                      <div className="relative h-64 md:h-80 overflow-hidden">
+                        <img
+                          src={filteredBlogs[0].image || "/placeholder.svg"}
+                          alt={filteredBlogs[0].title}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0" style={{ background: "linear-gradient(to right, transparent 60%, rgba(255,255,255,0.3) 100%)" }} />
+                        <div className="absolute top-4 left-4">
+                          <span className="px-3 py-1.5 rounded-full text-xs font-bold text-white" style={{
+                            background: categoryColors[filteredBlogs[0].category]?.text || "#047857",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.2)"
+                          }}>
+                            ★ Featured
+                          </span>
+                        </div>
+                      </div>
+                      {/* Featured Content */}
+                      <div className="p-6 md:p-8 flex flex-col justify-center">
+                        <span className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-4 w-fit" style={{
+                          background: categoryColors[filteredBlogs[0].category]?.bg || "#ecfdf5",
+                          color: categoryColors[filteredBlogs[0].category]?.text || "#047857",
+                          border: `1px solid ${categoryColors[filteredBlogs[0].category]?.border || "#a7f3d0"}`,
+                        }}>
+                          {filteredBlogs[0].category}
+                        </span>
+                        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3 group-hover:text-teal-700 transition-colors">
+                          {filteredBlogs[0].title}
+                        </h2>
+                        <p className="text-muted-foreground mb-5 leading-relaxed">{filteredBlogs[0].excerpt}</p>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-5">
+                          <div className="flex items-center gap-1.5">
+                            <User className="w-4 h-4" />
+                            {filteredBlogs[0].author}
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-4 h-4" />
+                            {filteredBlogs[0].date}
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="w-4 h-4" />
+                            {filteredBlogs[0].readTime}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-5">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleLike(filteredBlogs[0].id)
+                            }}
+                            className="flex items-center gap-1.5 text-sm transition-all duration-300"
+                            style={{ color: likedBlogs.includes(filteredBlogs[0].id) ? "#dc2626" : "#6b7280" }}
+                          >
+                            <Heart className={`w-4 h-4 ${likedBlogs.includes(filteredBlogs[0].id) ? "fill-red-500 text-red-500" : ""}`} />
+                            <span className="font-medium">{filteredBlogs[0].likes + (likedBlogs.includes(filteredBlogs[0].id) ? 1 : 0)}</span>
+                          </button>
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <MessageCircle className="w-4 h-4" />
+                            <span className="font-medium">{filteredBlogs[0].comments + (blogComments[filteredBlogs[0].id]?.length || 0)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {/* Blogs Grid */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredBlogs.slice(1).map((blog, index) => (
+                  <Card
+                    key={blog.id}
+                    className="group overflow-hidden border-0 cursor-pointer"
+                    onClick={() => setSelectedBlog(blog)}
+                    style={{
+                      background: "rgba(255,255,255,0.9)",
+                      backdropFilter: "blur(12px)",
+                      borderRadius: "1rem",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)",
+                      transition: "all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                      animationDelay: `${index * 100}ms`,
+                      animation: "fadeInUp 0.6s ease forwards",
+                      opacity: 0,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = "0 8px 30px rgba(5, 150, 105, 0.15), 0 4px 12px rgba(0,0,0,0.08)"
+                      e.currentTarget.style.transform = "translateY(-6px)"
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)"
+                      e.currentTarget.style.transform = "translateY(0)"
+                    }}
+                  >
+                    {/* Blog Image */}
+                    <div className="relative h-48 overflow-hidden">
+                      <img
+                        src={blog.image || "/placeholder.svg"}
+                        alt={blog.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 50%)" }} />
+                      
+                      {/* Read Time Badge */}
+                      <div className="absolute top-3 right-3">
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-white backdrop-blur-md flex items-center gap-1" style={{
+                          background: "rgba(0,0,0,0.4)",
+                        }}>
+                          <Clock className="w-3 h-3" />
+                          {blog.readTime}
+                        </span>
+                      </div>
+                    </div>
+
+                    <CardContent className="p-5">
+                      {/* Category Badge */}
+                      <span className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3" style={{
+                        background: categoryColors[blog.category]?.bg || "#ecfdf5",
+                        color: categoryColors[blog.category]?.text || "#047857",
+                        border: `1px solid ${categoryColors[blog.category]?.border || "#a7f3d0"}`,
+                      }}>
+                        {blog.category}
+                      </span>
+
+                      {/* Title */}
+                      <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-2 group-hover:text-teal-700 transition-colors duration-300">
+                        {blog.title}
+                      </h3>
+
+                      {/* Excerpt */}
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed">{blog.excerpt}</p>
+
+                      {/* Author and Date */}
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4 pb-4 border-b border-emerald-100/60">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center">
+                            <User className="w-3 h-3 text-white" />
+                          </div>
+                          {blog.author}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {blog.date}
+                        </div>
+                      </div>
+
+                      {/* Engagement Stats */}
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleLike(blog.id)
+                          }}
+                          className="flex items-center gap-1.5 transition-all duration-300 hover:scale-105"
+                          style={{ color: likedBlogs.includes(blog.id) ? "#dc2626" : "#6b7280" }}
+                        >
+                          <Heart
+                            className={`w-4 h-4 transition-all duration-300 ${likedBlogs.includes(blog.id) ? "fill-red-500 text-red-500" : ""}`}
+                          />
+                          <span className="font-medium">{blog.likes + (likedBlogs.includes(blog.id) ? 1 : 0)}</span>
+                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <MessageCircle className="w-4 h-4" />
+                          <span className="font-medium">{blog.comments + (blogComments[blog.id]?.length || 0)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          ) : (
+            /* Blog Detail View */
+            <div className="max-w-3xl mx-auto" style={{ animation: "fadeInUp 0.5s ease forwards" }}>
+              <button
+                onClick={() => setSelectedBlog(null)}
+                className="inline-flex items-center gap-2 mb-6 px-5 py-2.5 rounded-full text-sm font-semibold text-teal-700 transition-all duration-300 hover:gap-3"
+                style={{
+                  background: "rgba(255,255,255,0.8)",
+                  border: "1px solid #d1fae5",
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Blogs
+              </button>
+
+              <Card className="overflow-hidden border-0" style={{
+                background: "rgba(255,255,255,0.9)",
+                backdropFilter: "blur(12px)",
+                borderRadius: "1.25rem",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+              }}>
+                {/* Blog Image Hero */}
+                <div className="relative h-72 md:h-96 overflow-hidden">
+                  <img
+                    src={selectedBlog.image || "/placeholder.svg"}
+                    alt={selectedBlog.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0" style={{
+                    background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 40%, transparent 60%)"
+                  }} />
+                  <div className="absolute bottom-6 left-6 right-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="px-3 py-1.5 rounded-full text-xs font-bold text-white" style={{
+                        background: categoryColors[selectedBlog.category]?.text || "#047857",
+                      }}>
+                        {selectedBlog.category}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-white backdrop-blur-md flex items-center gap-1" style={{
+                        background: "rgba(255,255,255,0.15)",
+                      }}>
+                        <Clock className="w-3 h-3" />
+                        {selectedBlog.readTime}
+                      </span>
+                    </div>
+                    <h1 className="text-3xl md:text-4xl font-bold text-white" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
+                      {selectedBlog.title}
+                    </h1>
+                  </div>
+                </div>
+
+                <CardContent className="p-6 md:p-8">
+                  {/* Author and Meta */}
+                  <div className="flex items-center gap-4 mb-8 pb-6 border-b border-emerald-100">
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center">
+                      <User className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">{selectedBlog.author}</p>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {selectedBlog.date}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {selectedBlog.readTime}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="mb-8">
+                    <p className="text-[16px] text-foreground leading-[1.8] first-letter:text-4xl first-letter:font-bold first-letter:text-teal-600 first-letter:float-left first-letter:mr-2 first-letter:mt-1">
+                      {selectedBlog.content}
+                    </p>
+                  </div>
+
+                  {/* Engagement */}
+                  <div className="flex items-center gap-4 pt-6 border-t border-emerald-100 mb-8">
+                    <button
+                      onClick={() => toggleLike(selectedBlog.id)}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300"
+                      style={{
+                        background: likedBlogs.includes(selectedBlog.id) ? "linear-gradient(135deg, #fef2f2, #fee2e2)" : "#fef2f2",
+                        color: likedBlogs.includes(selectedBlog.id) ? "#dc2626" : "#6b7280",
+                        border: likedBlogs.includes(selectedBlog.id) ? "1px solid #fca5a5" : "1px solid #fecdd3",
+                      }}
+                    >
+                      <Heart
+                        className={`w-5 h-5 ${likedBlogs.includes(selectedBlog.id) ? "fill-red-500 text-red-500" : ""}`}
+                      />
+                      {selectedBlog.likes + (likedBlogs.includes(selectedBlog.id) ? 1 : 0)}
+                    </button>
+                    <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground transition-all duration-300" style={{
+                      background: "#f3f4f6",
+                      border: "1px solid #e5e7eb",
+                    }}>
+                      <MessageCircle className="w-5 h-5" />
+                      {selectedBlog.comments + (blogComments[selectedBlog.id]?.length || 0)} comments
+                    </button>
+                    <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground transition-all duration-300" style={{
+                      background: "#f3f4f6",
+                      border: "1px solid #e5e7eb",
+                    }}>
+                      <Share2 className="w-5 h-5" />
+                      Share
+                    </button>
+                  </div>
+
+                  {/* Comments Section */}
+                  <div className="border-t border-emerald-100 pt-8">
+                    <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
+                      <div className="w-1 h-6 rounded-full bg-teal-500" />
+                      Comments
+                    </h2>
+
+                    {/* Comment Input */}
+                    {isLoggedIn ? (
+                      <div className="mb-8">
+                        <textarea
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          placeholder="Share your thoughts on this article..."
+                          className="w-full px-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50/30 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none transition-all duration-300"
+                          rows={4}
+                        />
+                        <Button
+                          onClick={handlePostComment}
+                          disabled={!commentText.trim()}
+                          className="mt-3 rounded-xl font-semibold text-white"
+                          style={{
+                            background: commentText.trim() ? "linear-gradient(135deg, #059669 0%, #047857 100%)" : "#d1d5db",
+                            boxShadow: commentText.trim() ? "0 4px 12px rgba(5, 150, 105, 0.3)" : "none"
+                          }}
+                        >
+                          Post Comment
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="mb-8 p-4 rounded-xl text-center" style={{ background: "#f0fdf4", border: "1px dashed #86efac" }}>
+                        <p className="text-muted-foreground">Please log in to post a comment.</p>
+                      </div>
+                    )}
+
+                    {/* Comments List */}
+                    <div className="space-y-4">
+                      {(blogComments[selectedBlog.id] || []).map((comment) => (
+                        <div key={comment.id} className="p-4 rounded-xl" style={{ background: "#f0fdf4", border: "1px solid #d1fae5" }}>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-semibold text-foreground text-sm">{comment.author}</p>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {comment.timestamp}
+                            </p>
+                          </div>
+                          <p className="text-foreground text-sm leading-relaxed">{comment.text}</p>
+                        </div>
+                      ))}
+                      {(!blogComments[selectedBlog.id] || blogComments[selectedBlog.id].length === 0) && (
+                        <div className="text-center py-10">
+                          <MessageCircle className="w-10 h-10 text-emerald-200 mx-auto mb-3" />
+                          <p className="text-muted-foreground">
+                            No comments yet. Be the first to comment!
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
       </div>
       <Footer />
     </main>

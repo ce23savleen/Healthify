@@ -13,9 +13,9 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: "Healthyify - Natural Health Remedies",
-  description: "Discover trusted natural health remedies and consult with healthcare professionals",
-  generator: "v0.app",
+  title: "Healthify - Natural Home Remedies for Everyday Health",
+  description: "Discover safe and effective natural home remedies for cough, cold, skin, digestion, and wellness. Find trusted remedies backed by traditional wisdom and expert verification.",
+  keywords: "home remedies, natural remedies, health, wellness, ayurveda, herbal medicine, cough remedy, skin care",
 }
 
 export default function RootLayout({

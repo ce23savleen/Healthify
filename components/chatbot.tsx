@@ -14,6 +14,7 @@ interface Message {
   role: 'user' | 'bot'
   content: string
   doctorProfile?: Doctor
+  doctorProfiles?: Doctor[]
 }
 
 const quickOptions = [
@@ -64,7 +65,39 @@ function formatRemedies(disease: string, remedies: any[]): string {
   return response
 }
 
-function getBotResponse(message: string): { response: string; shouldNavigate: boolean; doctorInfo?: Doctor } {
+// Map of specialty synonyms/keywords to database specialty names
+const specialtyKeywords: Record<string, string[]> = {
+  'general medicine': ['general', 'general medicine', 'gp', 'family doctor', 'family medicine', 'general physician', 'general practitioner', 'fever', 'cold', 'flu'],
+  'cardiology': ['cardiology', 'cardiologist', 'heart', 'heart doctor', 'cardiac', 'chest pain', 'blood pressure'],
+  'dermatology': ['dermatology', 'dermatologist', 'skin', 'skin doctor', 'acne', 'rash', 'eczema'],
+  'pediatrics': ['pediatrics', 'pediatrician', 'child', 'children', 'child doctor', 'kids', 'baby doctor'],
+  'internal medicine': ['internal medicine', 'internist', 'internal'],
+  'gynecology': ['gynecology', 'gynecologist', 'gynaecologist', 'gynaecology', 'gynec', 'ob-gyn', 'obgyn', 'obstetrics', 'women health', 'pregnancy', 'maternity'],
+  'orthopedics': ['orthopedics', 'orthopedic', 'orthopaedic', 'bone', 'bone doctor', 'joint', 'fracture', 'spine'],
+  'neurology': ['neurology', 'neurologist', 'brain', 'brain doctor', 'nerve', 'migraine', 'headache doctor'],
+  'psychiatry': ['psychiatry', 'psychiatrist', 'mental health', 'mental', 'anxiety', 'depression', 'counselor', 'therapist'],
+  'ophthalmology': ['ophthalmology', 'ophthalmologist', 'eye', 'eye doctor', 'vision', 'optometrist'],
+  'dentistry': ['dentistry', 'dentist', 'dental', 'tooth', 'teeth'],
+  'ent': ['ent', 'ear nose throat', 'ear', 'throat', 'nose', 'otolaryngologist', 'sinus'],
+  'urology': ['urology', 'urologist', 'kidney', 'kidney doctor', 'bladder'],
+  'oncology': ['oncology', 'oncologist', 'cancer', 'tumor', 'tumour'],
+  'endocrinology': ['endocrinology', 'endocrinologist', 'diabetes', 'thyroid', 'hormone'],
+  'pulmonology': ['pulmonology', 'pulmonologist', 'lung', 'lung doctor', 'asthma', 'breathing', 'respiratory'],
+  'gastroenterology': ['gastroenterology', 'gastroenterologist', 'stomach', 'stomach doctor', 'digestion', 'liver', 'gastro'],
+}
+
+function detectSpecialty(msg: string): string | null {
+  for (const [specialty, keywords] of Object.entries(specialtyKeywords)) {
+    for (const keyword of keywords) {
+      if (msg.includes(keyword)) {
+        return specialty
+      }
+    }
+  }
+  return null
+}
+
+function getBotResponse(message: string): { response: string; shouldNavigate: boolean; doctorInfo?: Doctor; doctorList?: Doctor[] } {
   const msg = message.toLowerCase()
 
   // Check for remedy requests
@@ -72,7 +105,6 @@ function getBotResponse(message: string): { response: string; shouldNavigate: bo
   const hasRemedyKeyword = remedyKeywords.some(keyword => msg.includes(keyword))
 
   if (hasRemedyKeyword) {
-    // Try to find the disease name in the message
     for (const disease of Object.keys(remediesData)) {
       if (msg.includes(disease.replace('-', ' ')) || msg.includes(disease)) {
         const remedies = remediesData[disease]
@@ -82,25 +114,55 @@ function getBotResponse(message: string): { response: string; shouldNavigate: bo
         }
       }
     }
-
-    // If no specific disease found, suggest browsing ailments
     return {
       response: "I can help you find home remedies for various conditions! Try asking for specific remedies like 'acne remedies' or 'headache remedies'. You can also browse all available remedies in the Browse Ailments section.",
       shouldNavigate: false
     }
   }
 
-  // Check for doctor consultation requests
-  if (msg.includes('consult') && (msg.includes('doctor') || msg.includes('best') || msg.includes('good'))) {
-    const bestDoctor = getBestDoctor()
+  // Check for doctor consultation / recommendation requests
+  const isDoctorQuery = (
+    msg.includes('consult') || msg.includes('find') || msg.includes('recommend') ||
+    msg.includes('suggest') || msg.includes('need') || msg.includes('show') ||
+    msg.includes('list') || msg.includes('available') || msg.includes('looking for')
+  ) && (
+    msg.includes('doctor') || msg.includes('specialist') || msg.includes('physician') ||
+    detectSpecialty(msg) !== null
+  )
+
+  if (isDoctorQuery) {
+    const specialty = detectSpecialty(msg)
+
+    if (specialty) {
+      // Search by specialty in the database
+      const matchedDoctors = getDoctorsBySpecialty(specialty)
+
+      if (matchedDoctors.length > 0) {
+        return {
+          response: `I found ${matchedDoctors.length} ${specialty} specialist${matchedDoctors.length > 1 ? 's' : ''} for you:`,
+          shouldNavigate: false,
+          doctorList: matchedDoctors
+        }
+      } else {
+        // No exact match — show all available doctors as recommendations
+        return {
+          response: `We don't have a ${specialty} specialist in our database yet, but here are all our available doctors who might help you:`,
+          shouldNavigate: false,
+          doctorList: doctorsData
+        }
+      }
+    }
+
+    // Generic "consult a doctor" — show all doctors
     return {
-      response: `Here's our top-rated doctor for consultation:\n\n**${bestDoctor.name}**\nSpecialty: ${bestDoctor.specialty}\nExperience: ${bestDoctor.experience}\nRating: ${bestDoctor.rating}⭐ (${bestDoctor.reviews} reviews)\nLocation: ${bestDoctor.location}\n\nI'll take you to the consultation page now.`,
-      shouldNavigate: true,
-      doctorInfo: bestDoctor
+      response: `Here are all our available doctors. You can choose one to consult:`,
+      shouldNavigate: false,
+      doctorList: doctorsData
     }
   }
 
-  if (msg.includes('find') && msg.includes('doctor')) {
+  // "find best doctor" specifically
+  if (msg.includes('find') && msg.includes('best')) {
     const bestDoctor = getBestDoctor()
     return {
       response: `I found our highest-rated doctor for you:`,
@@ -244,7 +306,7 @@ export default function Chatbot() {
     // Bot response
     setTimeout(() => {
       const botResult = getBotResponse(msgToSend)
-      const botResponse: Message = { role: 'bot', content: botResult.response, doctorProfile: botResult.doctorInfo }
+      const botResponse: Message = { role: 'bot', content: botResult.response, doctorProfile: botResult.doctorInfo, doctorProfiles: botResult.doctorList }
       setMessages(prev => [...prev, botResponse])
 
       // Check for navigation
@@ -294,6 +356,16 @@ export default function Chatbot() {
                         }}
                       />
                     )}
+                    {msg.doctorProfiles && msg.doctorProfiles.map((doc) => (
+                      <DoctorProfileCard
+                        key={doc.id}
+                        doctor={doc}
+                        onViewProfile={(doctor) => {
+                          router.push(`/consult-doctor?doctorId=${doctor.id}`)
+                          setOpen(false)
+                        }}
+                      />
+                    ))}
                   </div>
                 </div>
               ))}

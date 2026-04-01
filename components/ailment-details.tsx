@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Heart, MessageCircle, Share2, Bookmark, AlertCircle, X, ShieldCheck, BadgeCheck } from "lucide-react"
+import { Heart, MessageCircle, Share2, Bookmark, AlertCircle, X, ShieldCheck, BadgeCheck, Star, Clock, Users, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
 import mockAilmentsData, { type MockAilment, type MockRemedy } from "@/data/mockAilmentsData"
@@ -267,79 +267,204 @@ export default function AilmentDetails({ slug }: { slug: string }) {
         </Card>
 
         <div>
-          <h2 className="text-2xl font-bold text-primary mb-6">Recommended Remedies</h2>
-          <div className="space-y-6">
+          {/* Section Header */}
+          <div className="text-center mb-10 space-y-3">
+            <div
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold"
+              style={{ background: "#fef3c7", color: "#d97706" }}
+            >
+              <Star className="w-4 h-4" />
+              Recommended
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight" style={{ color: "#064e3b" }}>
+              Recommended Remedies
+            </h2>
+            <p className="text-base max-w-xl mx-auto" style={{ color: "#6b7280" }}>
+              Discover effective natural remedies for {ailment.name}
+            </p>
+          </div>
+
+          {/* Remedies Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {remedies.map((remedy) => {
               const verifiedCount = getVerifiedCount(remedy)
               const doctorEndorsed = hasCurrentDoctorEndorsed(remedy)
+              const likeCount = remedy.likes + (likedRemedies.includes(remedy.id) ? 1 : 0)
+
+              // Extract keywords for ingredient tags
+              const ingredientKeywords = (remedy.description || "")
+                .match(/\b(turmeric|ginger|honey|lemon|milk|tea|oil|aloe vera|pepper|garlic|salt|water|cinnamon|basil|tulsi|eucalyptus|peppermint|chamomile|coconut|vinegar|oatmeal|fennel|cumin|neem|yogurt|banana|flaxseed|cherry)\b/gi)
+              const ingredients = ingredientKeywords
+                ? [...new Set(ingredientKeywords.map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()))].slice(0, 4)
+                : []
+
+              // Map remedy image from available public images
+              const imageMap: Record<string, string> = {
+                turmeric: "/remedy-turmeric-milk.png",
+                ginger: "/remedy-ginger-honey.png",
+                honey: "/remedy-ginger-honey.png",
+                aloe: "/remedy-aloe-vera.png",
+                peppermint: "/remedy-peppermint.png",
+                mint: "/remedy-peppermint.png",
+                tea: "/herbal-tea-with-flowers-and-herbs.jpg",
+                herb: "/herbs-and-natural-remedies-on-table.jpg",
+                milk: "/turmeric-golden-milk-ayurveda-health.jpg",
+              }
+              const titleLower = remedy.title.toLowerCase() + " " + (remedy.description || "").toLowerCase()
+              const remedyImage = Object.entries(imageMap).find(([key]) => titleLower.includes(key))?.[1] || "/herbs-and-natural-remedies-on-table.jpg"
+
+              // Star rating from likes
+              const rating = Math.min(5, Math.max(3.5, 3.5 + (remedy.likes / 200))).toFixed(1)
 
               return (
-                <Card
+                <div
                   key={remedy.id}
-                  className="hover:shadow-lg transition cursor-pointer"
+                  className="group relative rounded-2xl overflow-hidden transition-all duration-500 cursor-pointer"
+                  style={{
+                    background: "rgba(255,255,255,0.85)",
+                    backdropFilter: "blur(12px)",
+                    border: "1px solid rgba(209,250,229,0.6)",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-6px)"
+                    e.currentTarget.style.boxShadow = "0 20px 50px rgba(5,150,105,0.12)"
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)"
+                    e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.06)"
+                  }}
                   onClick={() => setSelectedRemedy(remedy)}
                 >
-                  <CardContent className="pt-6">
-                    <div className="mb-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="text-xl font-bold text-foreground mb-2">{remedy.title}</h3>
-                          <p className="text-teal-600 font-semibold text-sm">{ailment.name}</p>
-                        </div>
-                        {/* Verified badge */}
-                        {verifiedCount >= 3 ? (
-                          <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-full text-xs font-bold whitespace-nowrap shadow-sm">
-                            <ShieldCheck className="w-4 h-4" />
-                            Verified by {verifiedCount} Professionals
+                  {/* Image */}
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={remedyImage}
+                      alt={remedy.title}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+
+                    {/* Category Badge */}
+                    <div
+                      className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold"
+                      style={{
+                        background: "rgba(255,255,255,0.9)",
+                        backdropFilter: "blur(8px)",
+                        color: "#059669",
+                      }}
+                    >
+                      {ailment.name}
+                    </div>
+
+                    {/* Verified Badge */}
+                    {verifiedCount >= 1 && (
+                      <div
+                        className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
+                        style={{
+                          background: verifiedCount >= 3 ? "rgba(5,150,105,0.9)" : "rgba(59,130,246,0.9)",
+                          color: "white",
+                          backdropFilter: "blur(8px)",
+                        }}
+                      >
+                        <ShieldCheck className="w-3 h-3" />
+                        {verifiedCount}x Verified
+                      </div>
+                    )}
+
+                    {/* Save Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleSaveRemedy(remedy.id, remedy.title)
+                      }}
+                      className="absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 cursor-pointer"
+                      style={{
+                        background: savedRemedies.includes(remedy.id) ? "#059669" : "rgba(255,255,255,0.9)",
+                        backdropFilter: "blur(8px)",
+                      }}
+                    >
+                      <Bookmark
+                        className="w-4 h-4"
+                        style={{
+                          color: savedRemedies.includes(remedy.id) ? "white" : "#6b7280",
+                          fill: savedRemedies.includes(remedy.id) ? "white" : "none",
+                        }}
+                      />
+                    </button>
+
+                    {/* Rating */}
+                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+                      <div className="flex items-center gap-1 px-2.5 py-1 rounded-full" style={{
+                        background: "rgba(0,0,0,0.5)",
+                        backdropFilter: "blur(8px)",
+                      }}>
+                        <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                        <span className="text-xs font-semibold text-white">{rating}</span>
+                        <span className="text-xs text-white/60">({remedy.likes})</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-5 space-y-3">
+                    {/* Title */}
+                    <h3 className="text-lg font-bold" style={{ color: "#1f2937" }}>
+                      {remedy.title}
+                    </h3>
+
+                    {/* Author */}
+                    <p className="text-xs" style={{ color: "#9ca3af" }}>
+                      By {remedy.author} • {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </p>
+
+                    {/* Ingredient Tags */}
+                    {ingredients.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {ingredients.map((ingredient: string) => (
+                          <span
+                            key={ingredient}
+                            className="px-2.5 py-0.5 rounded-full text-xs font-medium"
+                            style={{ background: "#ecfdf5", color: "#059669" }}
+                          >
+                            {ingredient}
                           </span>
-                        ) : verifiedCount >= 1 ? (
-                          <span className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-full text-xs font-semibold whitespace-nowrap">
-                            <BadgeCheck className="w-3.5 h-3.5" />
-                            Verified by {verifiedCount} Professional{verifiedCount > 1 ? "s" : ""}
-                          </span>
-                        ) : null}
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Description Preview */}
+                    <p className="text-sm leading-relaxed line-clamp-2" style={{ color: "#6b7280" }}>
+                      {remedy.description}
+                    </p>
+
+                    {/* Meta Row */}
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-1 text-xs" style={{ color: "#9ca3af" }}>
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>5-15 mins</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs" style={{ color: "#9ca3af" }}>
+                        <Users className="w-3.5 h-3.5" />
+                        <span>{remedy.likes} tried this</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                      <span>By {remedy.author}</span>
-                      <span>•</span>
-                      <span>
-                        {new Date().toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" })}
-                      </span>
-                    </div>
-
-                    <p className="text-foreground text-sm line-clamp-2 mb-4">{remedy.description}</p>
-
-                    <div className="flex flex-wrap items-center gap-3">
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2 pt-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           toggleLike(remedy.id)
                         }}
-                        className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold transition ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                           likedRemedies.includes(remedy.id)
                             ? "bg-red-500 text-white"
-                            : "bg-red-100 text-red-600 hover:bg-red-200"
+                            : "bg-red-50 text-red-500 hover:bg-red-100"
                         }`}
                       >
-                        <Heart className={`w-4 h-4 ${likedRemedies.includes(remedy.id) ? "fill-current" : ""}`} />
-                        <span>{remedy.likes + (likedRemedies.includes(remedy.id) ? 1 : 0)}</span>
-                      </button>
-
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleSaveRemedy(remedy.id, remedy.title)
-                        }}
-                        className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold transition ${
-                          savedRemedies.includes(remedy.id)
-                            ? "bg-teal-100 text-teal-600"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                      >
-                        <Bookmark className={`w-4 h-4 ${savedRemedies.includes(remedy.id) ? "fill-current" : ""}`} />
-                        <span>Save</span>
+                        <Heart className={`w-3.5 h-3.5 ${likedRemedies.includes(remedy.id) ? "fill-current" : ""}`} />
+                        {likeCount}
                       </button>
 
                       <button
@@ -349,10 +474,10 @@ export default function AilmentDetails({ slug }: { slug: string }) {
                             setShowCommentForm(showCommentForm === remedy.id ? null : remedy.id)
                           )
                         }}
-                        className="flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-50 text-gray-500 hover:bg-gray-100 transition cursor-pointer"
                       >
-                        <MessageCircle className="w-4 h-4" />
-                        <span>{comments[remedy.id]?.length || 0}</span>
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        {comments[remedy.id]?.length || 0}
                       </button>
 
                       <button
@@ -360,13 +485,11 @@ export default function AilmentDetails({ slug }: { slug: string }) {
                           e.stopPropagation()
                           handleShare(remedy.title)
                         }}
-                        className="flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-50 text-gray-500 hover:bg-gray-100 transition cursor-pointer"
                       >
-                        <Share2 className="w-4 h-4" />
-                        <span>Share</span>
+                        <Share2 className="w-3.5 h-3.5" />
                       </button>
 
-                      {/* Continuous Endorsement for Doctors */}
                       {isDoctor && (
                         <button
                           onClick={(e) => {
@@ -374,28 +497,40 @@ export default function AilmentDetails({ slug }: { slug: string }) {
                             handleEndorse(remedy.id)
                           }}
                           disabled={doctorEndorsed}
-                          className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-semibold transition ml-auto ${
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ml-auto cursor-pointer ${
                             doctorEndorsed
-                              ? "bg-emerald-100 text-emerald-700 cursor-default"
-                              : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
                           }`}
                         >
-                          {doctorEndorsed ? (
-                            <>
-                              <BadgeCheck className="w-4 h-4" />
-                              <span>✓ You endorsed this</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>+1</span>
-                              <span>Endorse this Remedy</span>
-                            </>
-                          )}
+                          <BadgeCheck className="w-3.5 h-3.5" />
+                          {doctorEndorsed ? "Endorsed" : "Endorse"}
                         </button>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
+
+                    {/* Read More Button */}
+                    <button
+                      className="w-full mt-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+                      style={{
+                        background: "linear-gradient(135deg, #ecfdf5, #d1fae5)",
+                        color: "#059669",
+                        border: "1px solid #a7f3d020",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "linear-gradient(135deg, #059669, #10b981)"
+                        e.currentTarget.style.color = "white"
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "linear-gradient(135deg, #ecfdf5, #d1fae5)"
+                        e.currentTarget.style.color = "#059669"
+                      }}
+                    >
+                      Read More
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               )
             })}
           </div>
