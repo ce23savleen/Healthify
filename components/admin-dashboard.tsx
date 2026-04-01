@@ -5,82 +5,46 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
-  Leaf,
-  LayoutDashboard,
-  ShieldCheck,
-  Users,
-  FileWarning,
-  TicketCheck,
-  Database,
-  LogOut,
-  Menu,
-  X,
-  Eye,
-  Trash2,
-  UserX,
-  UserCheck,
-  Plus,
-  ChevronDown,
-  FileText,
-  AlertTriangle,
-  Clock,
-  CheckCircle,
-  TrendingUp,
-  Activity,
-  Search,
+  Leaf, LayoutDashboard, ShieldCheck, Users, FileWarning, TicketCheck, Database,
+  LogOut, Menu, X, Eye, Trash2, Plus, ChevronDown, FileText, AlertTriangle,
+  Clock, CheckCircle, TrendingUp, Activity, Search, Bell, Settings,
+  UserCheck, UserX, Ban, Shield, Award, GraduationCap, Building2,
+  Calendar, Mail, Phone, MapPin, Hash, ExternalLink, ChevronRight,
+  ArrowUpRight, ArrowDownRight, Flame, Zap, Star,
 } from "lucide-react"
 
-// ───────────────────── Types ─────────────────────
-
+// ─── Types ───
 type TabId = "dashboard" | "kyc" | "users" | "content" | "tickets" | "master"
 
-interface SidebarItem {
-  id: TabId
-  label: string
-  icon: React.ReactNode
-}
+interface SidebarItem { id: TabId; label: string; icon: React.ReactNode; badge?: number }
+interface Ticket { id: number; subject: string; user: string; status: "Open" | "In Progress" | "Resolved"; date: string; priority: "Low" | "Medium" | "High" }
+type UserStatus = "Active" | "Inactive" | "Banned"
+type AppUser = { id: number; name: string; email: string; type: "User" | "Doctor"; status: UserStatus; joined: string; avatar?: string }
 
-interface Ticket {
-  id: number
-  subject: string
-  user: string
-  status: "Open" | "In Progress" | "Resolved"
-  date: string
-  priority: "Low" | "Medium" | "High"
-}
-
-type AppUser = {
-  id: number
-  name: string
-  email: string
-  type: "User" | "Doctor"
-  status: "Active" | "Suspended" | "Banned"
-  joined: string
-}
-
-// ───────────────────── Mock Data ─────────────────────
-
+// ─── Mock Data ───
 const initialPendingDoctors = [
-  { id: 1, name: "Dr. Meera Patel", specialization: "Ayurveda", license: "AYU-2024-00382", doc: "degree_meera.pdf" },
-  { id: 2, name: "Dr. Ravi Shankar", specialization: "Naturopathy", license: "NAT-2023-01199", doc: "cert_ravi.pdf" },
-  { id: 3, name: "Dr. Ananya Das", specialization: "Homeopathy", license: "HOM-2025-00045", doc: "license_ananya.pdf" },
-  { id: 4, name: "Dr. Kiran Joshi", specialization: "Dietetics", license: "DIT-2024-00716", doc: "degree_kiran.pdf" },
+  { id: 1, name: "Dr. Meera Patel", email: "meera@clinic.com", specialization: "Ayurveda", license: "AYU-2024-00382", medicalCouncil: "Central Council of Indian Medicine (CCIM)", qualifications: "BAMS, MD (Ayurveda)", experience: "8 years", registrationDate: "Mar 15, 2026", doc: "degree_certificate_meera.pdf", phone: "+91 98765 43210", clinic: "Patel Ayurveda Clinic, Mumbai" },
+  { id: 2, name: "Dr. Ravi Shankar", email: "ravi@health.org", specialization: "Naturopathy", license: "NAT-2023-01199", medicalCouncil: "Indian Naturopathy & Yoga Board", qualifications: "BNYS, DNB", experience: "12 years", registrationDate: "Mar 10, 2026", doc: "naturopathy_license_ravi.pdf", phone: "+91 87654 32109", clinic: "Nature Cure Hospital, Delhi" },
+  { id: 3, name: "Dr. Ananya Das", email: "ananya@homeo.com", specialization: "Homeopathy", license: "HOM-2025-00045", medicalCouncil: "Central Council of Homeopathy (CCH)", qualifications: "BHMS, MD (Homeopathy)", experience: "5 years", registrationDate: "Mar 20, 2026", doc: "homeopathy_cert_ananya.pdf", phone: "+91 76543 21098", clinic: "Das Homeo Care, Kolkata" },
+  { id: 4, name: "Dr. Kiran Joshi", email: "kiran@diet.in", specialization: "Dietetics", license: "DIT-2024-00716", medicalCouncil: "Indian Dietetic Association (IDA)", qualifications: "MSc Nutrition, RD", experience: "6 years", registrationDate: "Mar 25, 2026", doc: "dietetics_degree_kiran.pdf", phone: "+91 65432 10987", clinic: "NutriLife Clinic, Bangalore" },
 ]
 
 const initialUsers: AppUser[] = [
   { id: 1, name: "Savleen Kaur", email: "savleen@example.com", type: "User", status: "Active", joined: "Jan 12, 2026" },
   { id: 2, name: "Dr. Meera Patel", email: "meera@clinic.com", type: "Doctor", status: "Active", joined: "Feb 3, 2026" },
-  { id: 3, name: "Arjun Mehta", email: "arjun@mail.com", type: "User", status: "Suspended", joined: "Mar 1, 2026" },
+  { id: 3, name: "Arjun Mehta", email: "arjun@mail.com", type: "User", status: "Inactive", joined: "Mar 1, 2026" },
   { id: 4, name: "Dr. Ravi Shankar", email: "ravi@health.org", type: "Doctor", status: "Active", joined: "Dec 20, 2025" },
   { id: 5, name: "Priyanka Reddy", email: "priyanka@mail.com", type: "User", status: "Active", joined: "Mar 15, 2026" },
   { id: 6, name: "Dr. Ananya Das", email: "ananya@homeo.com", type: "Doctor", status: "Banned", joined: "Nov 8, 2025" },
+  { id: 7, name: "Rahul Sharma", email: "rahul@mail.com", type: "User", status: "Active", joined: "Mar 20, 2026" },
+  { id: 8, name: "Dr. Kiran Joshi", email: "kiran@diet.in", type: "Doctor", status: "Inactive", joined: "Mar 22, 2026" },
 ]
 
 const initialContent = [
-  { id: 1, type: "Remedy" as const, title: "Bleach gargle for sore throat", author: "user_2389", ailment: "Sore Throat", flagged: true, date: "Mar 26, 2026" },
-  { id: 2, type: "Comment" as const, title: "This is a scam product, buy mine instead…", author: "spam_account", ailment: "—", flagged: true, date: "Mar 27, 2026" },
-  { id: 3, type: "Remedy" as const, title: "Hydrogen peroxide for acne", author: "user_8712", ailment: "Acne", flagged: true, date: "Mar 25, 2026" },
-  { id: 4, type: "Comment" as const, title: "Abusive language directed at doctor", author: "toxic_42", ailment: "—", flagged: true, date: "Mar 28, 2026" },
+  { id: 1, type: "Remedy" as const, title: "Bleach gargle for sore throat", author: "user_2389", ailment: "Sore Throat", flagged: true, date: "Mar 26, 2026", severity: "High" as const },
+  { id: 2, type: "Comment" as const, title: "This is a scam product, buy mine instead…", author: "spam_account", ailment: "—", flagged: true, date: "Mar 27, 2026", severity: "Critical" as const },
+  { id: 3, type: "Remedy" as const, title: "Hydrogen peroxide for acne", author: "user_8712", ailment: "Acne", flagged: true, date: "Mar 25, 2026", severity: "Medium" as const },
+  { id: 4, type: "Comment" as const, title: "Abusive language directed at doctor", author: "toxic_42", ailment: "—", flagged: true, date: "Mar 28, 2026", severity: "High" as const },
 ]
 
 const initialTickets: Ticket[] = [
@@ -88,118 +52,117 @@ const initialTickets: Ticket[] = [
   { id: 2, subject: "Doctor verification taking too long", user: "ravi@health.org", status: "In Progress", date: "Mar 27, 2026", priority: "High" },
   { id: 3, subject: "Incorrect BMI calculation", user: "arjun@mail.com", status: "Open", date: "Mar 26, 2026", priority: "Low" },
   { id: 4, subject: "Payment issue for consultation", user: "priyanka@mail.com", status: "Resolved", date: "Mar 25, 2026", priority: "High" },
-  { id: 5, subject: "Feature request: Dark mode", user: "user789@mail.com", status: "Open", date: "Mar 24, 2026", priority: "Low" },
 ]
 
-const initialAilments = [
-  "Acne", "Acid Reflux", "Anxiety", "Back Pain", "Cold and Flu",
-  "Diabetes", "Headache", "Insomnia", "Joint Pain", "Migraine",
-  "Nausea", "Sore Throat", "Skin Irritation",
-]
+const initialAilments = ["Acne","Acid Reflux","Anxiety","Back Pain","Cold and Flu","Diabetes","Headache","Insomnia","Joint Pain","Migraine","Nausea","Sore Throat","Skin Irritation"]
 
-// ───────────────────── Sidebar Tabs ─────────────────────
-
-const sidebarItems: SidebarItem[] = [
+// ─── Sidebar Tabs ───
+const makeSidebarItems = (pCount: number, tCount: number): SidebarItem[] => [
   { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-  { id: "kyc", label: "Doctor KYC", icon: <ShieldCheck className="w-5 h-5" /> },
+  { id: "kyc", label: "Doctor KYC", icon: <ShieldCheck className="w-5 h-5" />, badge: pCount || undefined },
   { id: "users", label: "User Management", icon: <Users className="w-5 h-5" /> },
   { id: "content", label: "Content Moderation", icon: <FileWarning className="w-5 h-5" /> },
-  { id: "tickets", label: "Support Tickets", icon: <TicketCheck className="w-5 h-5" /> },
+  { id: "tickets", label: "Support Tickets", icon: <TicketCheck className="w-5 h-5" />, badge: tCount || undefined },
   { id: "master", label: "Master Data", icon: <Database className="w-5 h-5" /> },
 ]
 
-// ═══════════════════  MAIN COMPONENT  ═══════════════════
-
+// ═══════════ MAIN COMPONENT ═══════════
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabId>("dashboard")
   const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  // ── Shared state lifted to top so views are stateful ──
   const [pendingDoctors, setPendingDoctors] = useState(initialPendingDoctors)
   const [users, setUsers] = useState(initialUsers)
   const [content, setContent] = useState(initialContent)
   const [tickets, setTickets] = useState(initialTickets)
   const [ailments, setAilments] = useState(initialAilments)
 
-  const switchTab = (id: TabId) => {
-    setActiveTab(id)
-    setSidebarOpen(false)
-  }
+  const openTicketCount = tickets.filter(t => t.status !== "Resolved").length
+  const sidebarItems = makeSidebarItems(pendingDoctors.length, openTicketCount)
+
+  const switchTab = (id: TabId) => { setActiveTab(id); setSidebarOpen(false) }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* ─── Mobile overlay ─── */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
+    <div className="min-h-screen flex" style={{ background: "#f8faf9" }}>
+      {/* Mobile overlay */}
+      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />}
 
-      {/* ═══════════  SIDEBAR  ═══════════ */}
-      <aside
-        className={`fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-card border-r border-border flex flex-col transition-transform duration-200 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
-      >
+      {/* ═══ SIDEBAR ═══ */}
+      <aside className={`fixed lg:sticky top-0 left-0 z-40 h-screen w-[260px] flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+        style={{ background: "linear-gradient(180deg, #064e3b 0%, #022c22 100%)" }}>
+        
         {/* Logo */}
-        <div className="flex items-center justify-between h-16 px-5 border-b border-border shrink-0">
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg text-secondary">
-            <Leaf className="w-5 h-5" />
-            <span className="font-heading">Healthyify</span>
+        <div className="flex items-center justify-between h-16 px-5 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 2px 8px rgba(16,185,129,0.4)" }}>
+              <Leaf className="w-4.5 h-4.5 text-white" />
+            </div>
+            <span className="font-bold text-lg text-white font-heading">Healthify</span>
           </Link>
-          <button className="lg:hidden text-foreground" onClick={() => setSidebarOpen(false)}>
-            <X className="w-5 h-5" />
-          </button>
+          <button className="lg:hidden text-white/60 hover:text-white" onClick={() => setSidebarOpen(false)}><X className="w-5 h-5" /></button>
         </div>
 
-        {/* Role label */}
-        <div className="px-5 py-3 border-b border-border">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Admin Panel</span>
+        {/* Admin badge */}
+        <div className="px-5 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}>A</div>
+            <div>
+              <p className="text-white text-sm font-semibold">Admin Panel</p>
+              <p className="text-emerald-400/60 text-[11px]">Super Admin</p>
+            </div>
+          </div>
         </div>
 
         {/* Nav items */}
-        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
-          {sidebarItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => switchTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                activeTab === item.id
-                  ? "bg-secondary text-secondary-foreground shadow-sm"
-                  : "text-foreground hover:bg-secondary/10"
-              }`}
-            >
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+          {sidebarItems.map(item => (
+            <button key={item.id} onClick={() => switchTab(item.id)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
+              style={activeTab === item.id
+                ? { background: "linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.15))", color: "#6ee7b7", borderLeft: "3px solid #10b981" }
+                : { color: "rgba(255,255,255,0.55)", borderLeft: "3px solid transparent" }}
+              onMouseEnter={e => { if (activeTab !== item.id) e.currentTarget.style.color = "rgba(255,255,255,0.85)"; e.currentTarget.style.background = activeTab === item.id ? "" : "rgba(255,255,255,0.04)" }}
+              onMouseLeave={e => { if (activeTab !== item.id) { e.currentTarget.style.color = "rgba(255,255,255,0.55)"; e.currentTarget.style.background = "transparent" } }}>
               {item.icon}
-              {item.label}
+              <span className="flex-1 text-left">{item.label}</span>
+              {item.badge && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>{item.badge}</span>}
             </button>
           ))}
         </nav>
 
         {/* Bottom */}
-        <div className="px-3 py-4 border-t border-border">
-          <Link
-            href="/"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
-          >
-            <LogOut className="w-5 h-5" />
-            Exit Admin
+        <div className="px-3 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all" style={{ color: "rgba(255,255,255,0.45)" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "#fca5a5"; e.currentTarget.style.background = "rgba(239,68,68,0.1)" }}
+            onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.45)"; e.currentTarget.style.background = "transparent" }}>
+            <LogOut className="w-5 h-5" /> Exit Admin
           </Link>
         </div>
       </aside>
 
-      {/* ═══════════  MAIN  ═══════════ */}
+      {/* ═══ MAIN ═══ */}
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Top bar */}
-        <header className="sticky top-0 z-20 h-16 bg-card border-b border-border flex items-center px-4 lg:px-8 shrink-0">
-          <button className="lg:hidden mr-3 text-foreground" onClick={() => setSidebarOpen(true)}>
-            <Menu className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-bold text-primary font-heading">
-            {sidebarItems.find((i) => i.id === activeTab)?.label}
-          </h1>
+        <header className="sticky top-0 z-20 h-16 flex items-center justify-between px-4 lg:px-8 shrink-0"
+          style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(209,250,229,0.4)" }}>
+          <div className="flex items-center gap-3">
+            <button className="lg:hidden text-foreground" onClick={() => setSidebarOpen(true)}><Menu className="w-6 h-6" /></button>
+            <h1 className="text-lg font-bold font-heading" style={{ color: "#064e3b" }}>{sidebarItems.find(i => i.id === activeTab)?.label}</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: "#f0fdf4", border: "1px solid #d1fae5" }}>
+              <Search className="w-4 h-4" style={{ color: "#6b7280" }} />
+              <input placeholder="Search..." className="bg-transparent text-sm outline-none w-32 placeholder-gray-400" style={{ color: "#374151" }} />
+            </div>
+            <button className="relative p-2 rounded-lg transition hover:bg-emerald-50">
+              <Bell className="w-5 h-5" style={{ color: "#6b7280" }} />
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: "#ef4444" }} />
+            </button>
+          </div>
         </header>
 
         {/* Content */}
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
-          {activeTab === "dashboard" && <DashboardHome pendingCount={pendingDoctors.length} userCount={users.length} ticketCount={tickets.filter((t) => t.status !== "Resolved").length} />}
+          {activeTab === "dashboard" && <DashboardHome pendingCount={pendingDoctors.length} userCount={users.length} ticketCount={openTicketCount} onNavigate={switchTab} />}
           {activeTab === "kyc" && <DoctorKYC doctors={pendingDoctors} setDoctors={setPendingDoctors} />}
           {activeTab === "users" && <UserManagement users={users} setUsers={setUsers} />}
           {activeTab === "content" && <ContentModeration content={content} setContent={setContent} />}
@@ -211,174 +174,237 @@ export default function AdminDashboard() {
   )
 }
 
-// ═══════════════════════════════════════════════════════
-//  1 ·  Dashboard Home
-// ═══════════════════════════════════════════════════════
-
-function DashboardHome({ pendingCount, userCount, ticketCount }: { pendingCount: number; userCount: number; ticketCount: number }) {
+// ═══════════ 1 · DASHBOARD HOME ═══════════
+function DashboardHome({ pendingCount, userCount, ticketCount, onNavigate }: { pendingCount: number; userCount: number; ticketCount: number; onNavigate: (id: TabId) => void }) {
   const metrics = [
-    { label: "Total Active Users", value: "2,847", icon: <Users className="w-6 h-6" />, color: "text-secondary", bg: "bg-secondary/10" },
-    { label: "Pending Verifications", value: String(pendingCount), icon: <ShieldCheck className="w-6 h-6" />, color: "text-accent", bg: "bg-accent/10" },
-    { label: "Open Support Tickets", value: String(ticketCount), icon: <TicketCheck className="w-6 h-6" />, color: "text-destructive", bg: "bg-destructive/10" },
-    { label: "Remedies Submitted", value: "1,234", icon: <FileText className="w-6 h-6" />, color: "text-primary", bg: "bg-primary/10" },
-    { label: "Doctors Onboarded", value: "186", icon: <Activity className="w-6 h-6" />, color: "text-secondary", bg: "bg-secondary/10" },
-    { label: "Monthly Growth", value: "+12.4%", icon: <TrendingUp className="w-6 h-6" />, color: "text-emerald-600", bg: "bg-emerald-100" },
+    { label: "Total Active Users", value: "2,847", change: "+12.5%", up: true, icon: <Users className="w-6 h-6" />, gradient: "linear-gradient(135deg, #059669, #10b981)" },
+    { label: "Pending Verifications", value: String(pendingCount), change: "+2 new", up: true, icon: <ShieldCheck className="w-6 h-6" />, gradient: "linear-gradient(135deg, #f59e0b, #fbbf24)" },
+    { label: "Open Tickets", value: String(ticketCount), change: "-3 today", up: false, icon: <TicketCheck className="w-6 h-6" />, gradient: "linear-gradient(135deg, #ef4444, #f87171)" },
+    { label: "Remedies Submitted", value: "1,234", change: "+8.2%", up: true, icon: <FileText className="w-6 h-6" />, gradient: "linear-gradient(135deg, #8b5cf6, #a78bfa)" },
+    { label: "Doctors Onboarded", value: "186", change: "+14 this month", up: true, icon: <Activity className="w-6 h-6" />, gradient: "linear-gradient(135deg, #0891b2, #22d3ee)" },
+    { label: "Monthly Growth", value: "+12.4%", change: "vs last month", up: true, icon: <TrendingUp className="w-6 h-6" />, gradient: "linear-gradient(135deg, #059669, #34d399)" },
+  ]
+
+  const activities = [
+    { text: "Dr. Kiran Joshi submitted KYC documents", time: "2 hours ago", icon: <ShieldCheck className="w-4 h-4" />, color: "#f59e0b" },
+    { text: "New remedy flagged for moderation", time: "4 hours ago", icon: <AlertTriangle className="w-4 h-4" />, color: "#ef4444" },
+    { text: "Support ticket #2 moved to In Progress", time: "6 hours ago", icon: <Clock className="w-4 h-4" />, color: "#3b82f6" },
+    { text: "User savleen@example.com updated profile", time: "8 hours ago", icon: <Users className="w-4 h-4" />, color: "#059669" },
+    { text: "New ailment 'Migraine' added to master data", time: "1 day ago", icon: <Database className="w-4 h-4" />, color: "#8b5cf6" },
   ]
 
   return (
     <div className="space-y-8">
+      {/* Metrics Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {metrics.map((m) => (
-          <Card key={m.label} className="hover:shadow-md transition">
-            <CardContent className="pt-6 flex items-start gap-4">
-              <div className={`w-12 h-12 rounded-xl ${m.bg} flex items-center justify-center shrink-0 ${m.color}`}>
+        {metrics.map((m, i) => (
+          <div key={m.label} className="relative overflow-hidden rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1"
+            style={{ background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)", animation: `fadeInUp 0.5s ease ${i * 80}ms both` }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 30px rgba(5,150,105,0.12)" }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)" }}>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium" style={{ color: "#6b7280" }}>{m.label}</p>
+                <p className="text-3xl font-bold mt-1" style={{ color: "#064e3b" }}>{m.value}</p>
+                <div className="flex items-center gap-1 mt-2">
+                  {m.up ? <ArrowUpRight className="w-3.5 h-3.5" style={{ color: "#059669" }} /> : <ArrowDownRight className="w-3.5 h-3.5" style={{ color: "#059669" }} />}
+                  <span className="text-xs font-medium" style={{ color: "#059669" }}>{m.change}</span>
+                </div>
+              </div>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white shrink-0" style={{ background: m.gradient, boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
                 {m.icon}
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{m.label}</p>
-                <p className="text-2xl font-bold text-foreground mt-0.5">{m.value}</p>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Quick-glance activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="grid lg:grid-cols-5 gap-6">
+        {/* Activity Timeline */}
+        <div className="lg:col-span-3 rounded-2xl p-6" style={{ background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+          <h3 className="text-lg font-bold mb-5" style={{ color: "#064e3b" }}>Recent Activity</h3>
           <div className="space-y-4">
-            {[
-              { text: "Dr. Kiran Joshi submitted KYC documents", time: "2 hours ago", icon: <ShieldCheck className="w-4 h-4 text-accent" /> },
-              { text: "New remedy flagged for moderation", time: "4 hours ago", icon: <AlertTriangle className="w-4 h-4 text-destructive" /> },
-              { text: "Support ticket #2 moved to In Progress", time: "6 hours ago", icon: <Clock className="w-4 h-4 text-secondary" /> },
-              { text: "User savleen@example.com updated profile", time: "8 hours ago", icon: <Users className="w-4 h-4 text-primary" /> },
-              { text: "New ailment 'Migraine' added to master data", time: "1 day ago", icon: <Database className="w-4 h-4 text-secondary" /> },
-            ].map((a, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/20 transition">
-                <div className="w-8 h-8 rounded-full bg-muted/30 flex items-center justify-center shrink-0">{a.icon}</div>
+            {activities.map((a, i) => (
+              <div key={i} className="flex items-start gap-3 p-3 rounded-xl transition hover:bg-emerald-50/50">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${a.color}15`, color: a.color }}>{a.icon}</div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground truncate">{a.text}</p>
-                  <p className="text-xs text-muted-foreground">{a.time}</p>
+                  <p className="text-sm font-medium truncate" style={{ color: "#374151" }}>{a.text}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "#9ca3af" }}>{a.time}</p>
                 </div>
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="lg:col-span-2 rounded-2xl p-6" style={{ background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+          <h3 className="text-lg font-bold mb-5" style={{ color: "#064e3b" }}>Quick Actions</h3>
+          <div className="space-y-3">
+            {[
+              { label: "Review Doctor KYC", desc: `${pendingCount} pending`, tab: "kyc" as TabId, color: "#f59e0b", icon: <ShieldCheck className="w-5 h-5" /> },
+              { label: "Manage Users", desc: `${userCount} total`, tab: "users" as TabId, color: "#059669", icon: <Users className="w-5 h-5" /> },
+              { label: "Open Tickets", desc: `${ticketCount} unresolved`, tab: "tickets" as TabId, color: "#ef4444", icon: <TicketCheck className="w-5 h-5" /> },
+              { label: "Content Moderation", desc: "4 flagged", tab: "content" as TabId, color: "#8b5cf6", icon: <FileWarning className="w-5 h-5" /> },
+            ].map(a => (
+              <button key={a.tab} onClick={() => onNavigate(a.tab)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+                style={{ border: "1px solid #f0fdf4" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f0fdf4"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(5,150,105,0.08)" }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.boxShadow = "none" }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${a.color}15`, color: a.color }}>{a.icon}</div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold" style={{ color: "#064e3b" }}>{a.label}</p>
+                  <p className="text-xs" style={{ color: "#9ca3af" }}>{a.desc}</p>
+                </div>
+                <ChevronRight className="w-4 h-4" style={{ color: "#d1d5db" }} />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
 
-// ═══════════════════════════════════════════════════════
-//  2 ·  Doctor KYC
-// ═══════════════════════════════════════════════════════
-
-function DoctorKYC({
-  doctors,
-  setDoctors,
-}: {
-  doctors: typeof initialPendingDoctors
-  setDoctors: React.Dispatch<React.SetStateAction<typeof initialPendingDoctors>>
-}) {
+// ═══════════ 2 · DOCTOR KYC ═══════════
+function DoctorKYC({ doctors, setDoctors }: { doctors: typeof initialPendingDoctors; setDoctors: React.Dispatch<React.SetStateAction<typeof initialPendingDoctors>> }) {
   const [reviewDoctor, setReviewDoctor] = useState<(typeof initialPendingDoctors)[0] | null>(null)
-
-  const handleAction = (id: number) => {
-    setDoctors((prev) => prev.filter((d) => d.id !== id))
-    setReviewDoctor(null)
-  }
+  const handleAction = (id: number) => { setDoctors(prev => prev.filter(d => d.id !== id)); setReviewDoctor(null) }
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Pending Doctor Verifications</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {doctors.length === 0 ? (
-            <div className="text-center py-12">
-              <CheckCircle className="w-12 h-12 text-secondary mx-auto mb-3 opacity-60" />
-              <p className="text-muted-foreground">All doctor verifications are complete!</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left">
-                    <th className="pb-3 font-semibold text-muted-foreground">Name</th>
-                    <th className="pb-3 font-semibold text-muted-foreground">Specialization</th>
-                    <th className="pb-3 font-semibold text-muted-foreground">License Number</th>
-                    <th className="pb-3 font-semibold text-muted-foreground text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {doctors.map((doc) => (
-                    <tr key={doc.id} className="border-b border-border last:border-0 hover:bg-muted/10 transition">
-                      <td className="py-3.5 font-medium text-foreground">{doc.name}</td>
-                      <td className="py-3.5 text-foreground">{doc.specialization}</td>
-                      <td className="py-3.5">
-                        <code className="px-2 py-0.5 bg-secondary/10 text-secondary rounded text-xs font-mono">{doc.license}</code>
-                      </td>
-                      <td className="py-3.5 text-right">
-                        <Button size="sm" onClick={() => setReviewDoctor(doc)} className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-                          <Eye className="w-4 h-4 mr-1.5" />
-                          Review
-                        </Button>
-                      </td>
-                    </tr>
+      <div className="rounded-2xl overflow-hidden" style={{ background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+        <div className="px-6 py-5 flex items-center justify-between" style={{ borderBottom: "1px solid #f0fdf4" }}>
+          <div>
+            <h3 className="text-lg font-bold" style={{ color: "#064e3b" }}>Pending Doctor Verifications</h3>
+            <p className="text-sm mt-0.5" style={{ color: "#9ca3af" }}>{doctors.length} doctors awaiting KYC verification</p>
+          </div>
+          <div className="px-3 py-1.5 rounded-full text-xs font-bold" style={{ background: doctors.length > 0 ? "#fef3c7" : "#d1fae5", color: doctors.length > 0 ? "#92400e" : "#047857" }}>
+            {doctors.length > 0 ? `${doctors.length} Pending` : "All Clear"}
+          </div>
+        </div>
+
+        {doctors.length === 0 ? (
+          <div className="text-center py-16">
+            <CheckCircle className="w-14 h-14 mx-auto mb-3" style={{ color: "#10b981", opacity: 0.5 }} />
+            <p style={{ color: "#6b7280" }}>All doctor verifications complete!</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ background: "#f8fdf9", borderBottom: "1px solid #e5e7eb" }}>
+                  {["Doctor", "Specialization", "License Number", "Medical Council", "Submitted", ""].map(h => (
+                    <th key={h} className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: "#6b7280" }}>{h}</th>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                </tr>
+              </thead>
+              <tbody>
+                {doctors.map(doc => (
+                  <tr key={doc.id} className="transition hover:bg-emerald-50/30" style={{ borderBottom: "1px solid #f3f4f6" }}>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: "linear-gradient(135deg, #059669, #10b981)" }}>
+                          {doc.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                        </div>
+                        <div>
+                          <p className="font-semibold" style={{ color: "#064e3b" }}>{doc.name}</p>
+                          <p className="text-xs" style={{ color: "#9ca3af" }}>{doc.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: "#ecfdf5", color: "#047857" }}>{doc.specialization}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <code className="px-2.5 py-1 rounded-md text-xs font-mono font-semibold" style={{ background: "#f0f9ff", color: "#0369a1", border: "1px solid #bae6fd" }}>{doc.license}</code>
+                    </td>
+                    <td className="px-6 py-4 text-xs" style={{ color: "#6b7280" }}>{doc.medicalCouncil}</td>
+                    <td className="px-6 py-4 text-xs" style={{ color: "#9ca3af" }}>{doc.registrationDate}</td>
+                    <td className="px-6 py-4 text-right">
+                      <button onClick={() => setReviewDoctor(doc)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:scale-105 cursor-pointer"
+                        style={{ background: "linear-gradient(135deg, #059669, #047857)", boxShadow: "0 2px 8px rgba(5,150,105,0.3)" }}>
+                        <Eye className="w-3.5 h-3.5" /> Review KYC
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-      {/* ── Review Modal ── */}
+      {/* ── KYC Review Modal ── */}
       {reviewDoctor && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setReviewDoctor(null)}>
-          <div className="bg-card rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h2 className="text-lg font-bold text-primary font-heading">KYC Review — {reviewDoctor.name}</h2>
-              <button onClick={() => setReviewDoctor(null)} className="text-muted-foreground hover:text-foreground transition">
-                <X className="w-5 h-5" />
-              </button>
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setReviewDoctor(null)}>
+          <div className="rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto" style={{ background: "white", boxShadow: "0 25px 60px rgba(0,0,0,0.25)" }} onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4" style={{ background: "linear-gradient(135deg, #064e3b, #047857)", borderRadius: "1rem 1rem 0 0" }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-emerald-900" style={{ background: "rgba(255,255,255,0.9)" }}>
+                  {reviewDoctor.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">KYC Verification</h2>
+                  <p className="text-emerald-200 text-sm">{reviewDoctor.name}</p>
+                </div>
+              </div>
+              <button onClick={() => setReviewDoctor(null)} className="text-white/60 hover:text-white transition cursor-pointer"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6 p-6">
-              {/* Left — Document preview */}
-              <div className="flex flex-col items-center justify-center bg-muted/20 rounded-lg border-2 border-dashed border-border p-8 min-h-65">
-                <FileText className="w-16 h-16 text-muted-foreground/40 mb-3" />
-                <p className="text-sm font-medium text-foreground mb-1">{reviewDoctor.doc}</p>
-                <p className="text-xs text-muted-foreground">PDF / Image preview placeholder</p>
+            <div className="grid md:grid-cols-5 gap-0">
+              {/* Left — Document Preview (2 cols) */}
+              <div className="md:col-span-2 p-6 flex flex-col" style={{ background: "#f8fdf9", borderRight: "1px solid #e5e7eb" }}>
+                <h4 className="text-sm font-bold uppercase tracking-wider mb-4" style={{ color: "#6b7280" }}>Uploaded Certificate</h4>
+                <div className="flex-1 flex flex-col items-center justify-center rounded-xl p-8 min-h-[240px]" style={{ border: "2px dashed #d1fae5", background: "white" }}>
+                  <FileText className="w-16 h-16 mb-3" style={{ color: "#10b981", opacity: 0.4 }} />
+                  <p className="text-sm font-semibold text-center" style={{ color: "#064e3b" }}>{reviewDoctor.doc}</p>
+                  <p className="text-xs text-center mt-1" style={{ color: "#9ca3af" }}>Certificate / Degree Document</p>
+                  <button className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition cursor-pointer" style={{ background: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0" }}>
+                    <ExternalLink className="w-3.5 h-3.5" /> View Full Document
+                  </button>
+                </div>
+                <div className="mt-4 p-3 rounded-lg" style={{ background: "#fffbeb", border: "1px solid #fde68a" }}>
+                  <p className="text-xs font-semibold" style={{ color: "#92400e" }}>⚠ Verify Authenticity</p>
+                  <p className="text-xs mt-0.5" style={{ color: "#a16207" }}>Cross-check license with the issuing council before approval.</p>
+                </div>
               </div>
 
-              {/* Right — Details */}
-              <div className="space-y-5">
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Full Name</p>
-                  <p className="text-foreground font-semibold">{reviewDoctor.name}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Specialization</p>
-                  <p className="text-foreground">{reviewDoctor.specialization}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">License Number</p>
-                  <code className="px-3 py-1.5 bg-secondary/10 text-secondary rounded-md text-sm font-mono inline-block">{reviewDoctor.license}</code>
-                </div>
+              {/* Right — KYC Details (3 cols) */}
+              <div className="md:col-span-3 p-6 space-y-4">
+                <h4 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: "#6b7280" }}>Doctor Information</h4>
+                {[
+                  { label: "Full Name", value: reviewDoctor.name, icon: <UserCheck className="w-4 h-4" /> },
+                  { label: "Email", value: reviewDoctor.email, icon: <Mail className="w-4 h-4" /> },
+                  { label: "Phone", value: reviewDoctor.phone, icon: <Phone className="w-4 h-4" /> },
+                  { label: "Specialization", value: reviewDoctor.specialization, icon: <Award className="w-4 h-4" /> },
+                  { label: "Qualifications", value: reviewDoctor.qualifications, icon: <GraduationCap className="w-4 h-4" /> },
+                  { label: "Experience", value: reviewDoctor.experience, icon: <Clock className="w-4 h-4" /> },
+                  { label: "License Number", value: reviewDoctor.license, icon: <Hash className="w-4 h-4" />, mono: true },
+                  { label: "Medical Council", value: reviewDoctor.medicalCouncil, icon: <Shield className="w-4 h-4" /> },
+                  { label: "Clinic", value: reviewDoctor.clinic, icon: <Building2 className="w-4 h-4" /> },
+                  { label: "Registration Date", value: reviewDoctor.registrationDate, icon: <Calendar className="w-4 h-4" /> },
+                ].map(f => (
+                  <div key={f.label} className="flex items-start gap-3 py-2" style={{ borderBottom: "1px solid #f3f4f6" }}>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: "#f0fdf4", color: "#059669" }}>{f.icon}</div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider" style={{ color: "#9ca3af" }}>{f.label}</p>
+                      {f.mono ? <code className="text-sm font-mono font-semibold" style={{ color: "#0369a1" }}>{f.value}</code> : <p className="text-sm font-semibold" style={{ color: "#064e3b" }}>{f.value}</p>}
+                    </div>
+                  </div>
+                ))}
 
+                {/* Action Buttons */}
                 <div className="flex gap-3 pt-4">
-                  <Button onClick={() => handleAction(reviewDoctor.id)} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white">
-                    <CheckCircle className="w-4 h-4 mr-1.5" />
-                    Approve
-                  </Button>
-                  <Button onClick={() => handleAction(reviewDoctor.id)} className="flex-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-                    <X className="w-4 h-4 mr-1.5" />
-                    Reject
-                  </Button>
+                  <button onClick={() => handleAction(reviewDoctor.id)} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02] cursor-pointer"
+                    style={{ background: "linear-gradient(135deg, #059669, #047857)", boxShadow: "0 4px 14px rgba(5,150,105,0.3)" }}>
+                    <CheckCircle className="w-4 h-4" /> Approve
+                  </button>
+                  <button onClick={() => handleAction(reviewDoctor.id)} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02] cursor-pointer"
+                    style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)", boxShadow: "0 4px 14px rgba(239,68,68,0.3)" }}>
+                    <X className="w-4 h-4" /> Reject
+                  </button>
                 </div>
               </div>
             </div>
@@ -389,359 +415,251 @@ function DoctorKYC({
   )
 }
 
-// ═══════════════════════════════════════════════════════
-//  3 ·  User Management
-// ═══════════════════════════════════════════════════════
-
-function UserManagement({
-  users,
-  setUsers,
-}: {
-  users: AppUser[]
-  setUsers: React.Dispatch<React.SetStateAction<AppUser[]>>
-}) {
+// ═══════════ 3 · USER MANAGEMENT ═══════════
+function UserManagement({ users, setUsers }: { users: AppUser[]; setUsers: React.Dispatch<React.SetStateAction<AppUser[]>> }) {
   const [searchTerm, setSearchTerm] = useState("")
+  const [typeFilter, setTypeFilter] = useState<"All" | "User" | "Doctor">("All")
+  const [statusFilter, setStatusFilter] = useState<"All" | UserStatus>("All")
 
-  const cycleStatus = (id: number) => {
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.id !== id) return u
-        const next: AppUser["status"] =
-          u.status === "Active" ? "Suspended" : u.status === "Suspended" ? "Banned" : "Active"
-        return { ...u, status: next }
-      })
-    )
+  const changeStatus = (id: number, newStatus: UserStatus) => {
+    setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus } : u))
   }
 
-  const filtered = users.filter(
-    (u) =>
-      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = users.filter(u =>
+    (u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (typeFilter === "All" || u.type === typeFilter) &&
+    (statusFilter === "All" || u.status === statusFilter)
   )
 
-  const statusStyles: Record<string, string> = {
-    Active: "bg-emerald-100 text-emerald-700",
-    Suspended: "bg-amber-100 text-amber-700",
-    Banned: "bg-red-100 text-red-700",
+  const statusColors: Record<UserStatus, { bg: string; text: string; border: string; dot: string }> = {
+    Active: { bg: "#ecfdf5", text: "#047857", border: "#a7f3d0", dot: "#10b981" },
+    Inactive: { bg: "#fffbeb", text: "#92400e", border: "#fde68a", dot: "#f59e0b" },
+    Banned: { bg: "#fef2f2", text: "#991b1b", border: "#fecaca", dot: "#ef4444" },
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <CardTitle className="text-lg">All Users &amp; Doctors</CardTitle>
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search by name or email…"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-card text-foreground text-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary transition"
-          />
+    <div className="space-y-5">
+      {/* Filters Row */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#9ca3af" }} />
+          <input type="text" placeholder="Search by name or email…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none transition" style={{ background: "white", border: "1px solid #d1fae5", color: "#374151" }} />
         </div>
-      </CardHeader>
-      <CardContent>
+        <div className="flex gap-2 flex-wrap">
+          {(["All", "User", "Doctor"] as const).map(t => (
+            <button key={t} onClick={() => setTypeFilter(t)} className="px-3 py-2 rounded-lg text-xs font-semibold transition cursor-pointer"
+              style={typeFilter === t ? { background: "#064e3b", color: "white" } : { background: "white", color: "#6b7280", border: "1px solid #e5e7eb" }}>{t}</button>
+          ))}
+          <div className="w-px" style={{ background: "#e5e7eb" }} />
+          {(["All", "Active", "Inactive", "Banned"] as const).map(s => (
+            <button key={s} onClick={() => setStatusFilter(s)} className="px-3 py-2 rounded-lg text-xs font-semibold transition cursor-pointer"
+              style={statusFilter === s ? { background: "#064e3b", color: "white" } : { background: "white", color: "#6b7280", border: "1px solid #e5e7eb" }}>{s}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Users Table */}
+      <div className="rounded-2xl overflow-hidden" style={{ background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+        <div className="px-6 py-4" style={{ borderBottom: "1px solid #f0fdf4" }}>
+          <h3 className="text-lg font-bold" style={{ color: "#064e3b" }}>All Users & Doctors</h3>
+          <p className="text-xs mt-0.5" style={{ color: "#9ca3af" }}>{filtered.length} of {users.length} users shown</p>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left">
-                <th className="pb-3 font-semibold text-muted-foreground">Name</th>
-                <th className="pb-3 font-semibold text-muted-foreground">Email</th>
-                <th className="pb-3 font-semibold text-muted-foreground">Type</th>
-                <th className="pb-3 font-semibold text-muted-foreground">Joined</th>
-                <th className="pb-3 font-semibold text-muted-foreground">Status</th>
-                <th className="pb-3 font-semibold text-muted-foreground text-right">Action</th>
+              <tr style={{ background: "#f8fdf9", borderBottom: "1px solid #e5e7eb" }}>
+                {["User", "Email", "Type", "Joined", "Status", "Change Status"].map(h => (
+                  <th key={h} className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: "#6b7280" }}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.map((user) => (
-                <tr key={user.id} className="border-b border-border last:border-0 hover:bg-muted/10 transition">
-                  <td className="py-3.5 font-medium text-foreground">{user.name}</td>
-                  <td className="py-3.5 text-foreground">{user.email}</td>
-                  <td className="py-3.5">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${user.type === "Doctor" ? "bg-secondary/10 text-secondary" : "bg-primary/10 text-primary"}`}>
-                      {user.type}
-                    </span>
-                  </td>
-                  <td className="py-3.5 text-muted-foreground">{user.joined}</td>
-                  <td className="py-3.5">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[user.status]}`}>{user.status}</span>
-                  </td>
-                  <td className="py-3.5 text-right">
-                    <button
-                      onClick={() => cycleStatus(user.id)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                        user.status === "Active"
-                          ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
-                          : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                      }`}
-                    >
-                      {user.status === "Active" ? (
-                        <>
-                          <UserX className="w-3.5 h-3.5" />
-                          Suspend
-                        </>
-                      ) : (
-                        <>
-                          <UserCheck className="w-3.5 h-3.5" />
-                          Reactivate
-                        </>
-                      )}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filtered.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">No users match your search.</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-// ═══════════════════════════════════════════════════════
-//  4 ·  Content Moderation
-// ═══════════════════════════════════════════════════════
-
-function ContentModeration({
-  content,
-  setContent,
-}: {
-  content: typeof initialContent
-  setContent: React.Dispatch<React.SetStateAction<typeof initialContent>>
-}) {
-  const removeItem = (id: number) => {
-    setContent((prev) => prev.filter((c) => c.id !== id))
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5 text-destructive" />
-          Flagged Content
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {content.length === 0 ? (
-          <div className="text-center py-12">
-            <CheckCircle className="w-12 h-12 text-secondary mx-auto mb-3 opacity-60" />
-            <p className="text-muted-foreground">No flagged content. All clear!</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="pb-3 font-semibold text-muted-foreground">Type</th>
-                  <th className="pb-3 font-semibold text-muted-foreground">Content</th>
-                  <th className="pb-3 font-semibold text-muted-foreground">Author</th>
-                  <th className="pb-3 font-semibold text-muted-foreground">Date</th>
-                  <th className="pb-3 font-semibold text-muted-foreground text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {content.map((item) => (
-                  <tr key={item.id} className="border-b border-border last:border-0 hover:bg-muted/10 transition">
-                    <td className="py-3.5">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${item.type === "Remedy" ? "bg-accent/20 text-accent" : "bg-primary/10 text-primary"}`}>
-                        {item.type}
+              {filtered.map(user => {
+                const sc = statusColors[user.status]
+                return (
+                  <tr key={user.id} className="transition hover:bg-emerald-50/30" style={{ borderBottom: "1px solid #f3f4f6" }}>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                          style={{ background: user.type === "Doctor" ? "linear-gradient(135deg, #059669, #10b981)" : "linear-gradient(135deg, #6366f1, #8b5cf6)" }}>
+                          {user.name.charAt(0)}
+                        </div>
+                        <span className="font-semibold" style={{ color: "#064e3b" }}>{user.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-xs" style={{ color: "#6b7280" }}>{user.email}</td>
+                    <td className="px-6 py-4">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold"
+                        style={{ background: user.type === "Doctor" ? "#ecfdf5" : "#eff6ff", color: user.type === "Doctor" ? "#047857" : "#1d4ed8" }}>{user.type}</span>
+                    </td>
+                    <td className="px-6 py-4 text-xs" style={{ color: "#9ca3af" }}>{user.joined}</td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: sc.bg, color: sc.text, border: `1px solid ${sc.border}` }}>
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: sc.dot }} />
+                        {user.status}
                       </span>
                     </td>
-                    <td className="py-3.5 text-foreground max-w-xs truncate">{item.title}</td>
-                    <td className="py-3.5 text-muted-foreground font-mono text-xs">{item.author}</td>
-                    <td className="py-3.5 text-muted-foreground">{item.date}</td>
-                    <td className="py-3.5 text-right">
-                      <Button size="sm" onClick={() => removeItem(item.id)} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-                        <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                        Delete / Hide
-                      </Button>
+                    <td className="px-6 py-4">
+                      <div className="relative">
+                        <select value={user.status} onChange={e => changeStatus(user.id, e.target.value as UserStatus)}
+                          className="appearance-none pl-3 pr-8 py-2 rounded-lg text-xs font-semibold transition cursor-pointer outline-none"
+                          style={{ background: sc.bg, color: sc.text, border: `1px solid ${sc.border}` }}>
+                          <option value="Active">✅ Active</option>
+                          <option value="Inactive">⏸️ Inactive</option>
+                          <option value="Banned">🚫 Banned</option>
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: sc.text }} />
+                      </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-// ═══════════════════════════════════════════════════════
-//  5 ·  Support Tickets
-// ═══════════════════════════════════════════════════════
-
-function SupportTickets({
-  tickets,
-  setTickets,
-}: {
-  tickets: Ticket[]
-  setTickets: React.Dispatch<React.SetStateAction<Ticket[]>>
-}) {
-  const sorted = [...tickets].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-
-  const changeStatus = (id: number, newStatus: Ticket["status"]) => {
-    setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t)))
-  }
-
-  const statusIcon: Record<string, React.ReactNode> = {
-    Open: <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />,
-    "In Progress": <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />,
-    Resolved: <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />,
-  }
-
-  const priorityStyles: Record<string, string> = {
-    High: "bg-red-100 text-red-700",
-    Medium: "bg-amber-100 text-amber-700",
-    Low: "bg-gray-100 text-gray-600",
-  }
-
-  return (
-    <div className="space-y-4">
-      {sorted.map((ticket) => (
-        <Card key={ticket.id} className="hover:shadow-md transition">
-          <CardContent className="pt-5 pb-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  {statusIcon[ticket.status]}
-                  <h3 className="font-semibold text-foreground truncate">{ticket.subject}</h3>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${priorityStyles[ticket.priority]}`}>{ticket.priority}</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span>{ticket.user}</span>
-                  <span>•</span>
-                  <span>{ticket.date}</span>
-                </div>
-              </div>
-
-              {/* Status dropdown */}
-              <div className="relative shrink-0">
-                <select
-                  value={ticket.status}
-                  onChange={(e) => changeStatus(ticket.id, e.target.value as any)}
-                  className={`appearance-none pl-3 pr-8 py-1.5 rounded-lg border text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-secondary cursor-pointer ${
-                    ticket.status === "Open"
-                      ? "border-amber-300 bg-amber-50 text-amber-700"
-                      : ticket.status === "In Progress"
-                        ? "border-blue-300 bg-blue-50 text-blue-700"
-                        : "border-emerald-300 bg-emerald-50 text-emerald-700"
-                  }`}
-                >
-                  <option value="Open">Open</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Resolved">Resolved</option>
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+                )
+              })}
+            </tbody>
+          </table>
+          {filtered.length === 0 && <p className="text-center py-10" style={{ color: "#9ca3af" }}>No users match your search.</p>}
+        </div>
+      </div>
     </div>
   )
 }
 
-// ═══════════════════════════════════════════════════════
-//  6 ·  Master Data (Taxonomy)
-// ═══════════════════════════════════════════════════════
+// ═══════════ 4 · CONTENT MODERATION ═══════════
+function ContentModeration({ content, setContent }: { content: typeof initialContent; setContent: React.Dispatch<React.SetStateAction<typeof initialContent>> }) {
+  const removeItem = (id: number) => setContent(prev => prev.filter(c => c.id !== id))
+  const sevColors: Record<string, { bg: string; text: string }> = {
+    Critical: { bg: "#fef2f2", text: "#991b1b" }, High: { bg: "#fff7ed", text: "#9a3412" }, Medium: { bg: "#fffbeb", text: "#92400e" }, Low: { bg: "#f0fdf4", text: "#166534" },
+  }
 
-function MasterData({
-  ailments,
-  setAilments,
-}: {
-  ailments: string[]
-  setAilments: React.Dispatch<React.SetStateAction<string[]>>
-}) {
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+      <div className="px-6 py-5 flex items-center gap-3" style={{ borderBottom: "1px solid #f0fdf4" }}>
+        <AlertTriangle className="w-5 h-5" style={{ color: "#ef4444" }} />
+        <div>
+          <h3 className="text-lg font-bold" style={{ color: "#064e3b" }}>Flagged Content</h3>
+          <p className="text-xs mt-0.5" style={{ color: "#9ca3af" }}>{content.length} items require moderation</p>
+        </div>
+      </div>
+      {content.length === 0 ? (
+        <div className="text-center py-16"><CheckCircle className="w-14 h-14 mx-auto mb-3" style={{ color: "#10b981", opacity: 0.5 }} /><p style={{ color: "#6b7280" }}>No flagged content. All clear!</p></div>
+      ) : (
+        <div className="divide-y" style={{ borderColor: "#f3f4f6" }}>
+          {content.map(item => {
+            const sev = sevColors[item.severity] || sevColors.Medium
+            return (
+              <div key={item.id} className="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 transition hover:bg-red-50/30">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: item.type === "Remedy" ? "#ecfdf5" : "#eff6ff", color: item.type === "Remedy" ? "#047857" : "#1d4ed8" }}>{item.type}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: sev.bg, color: sev.text }}>{item.severity}</span>
+                  </div>
+                  <p className="text-sm font-medium truncate" style={{ color: "#374151" }}>{item.title}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "#9ca3af" }}>By <span className="font-mono">{item.author}</span> · {item.date}</p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button onClick={() => removeItem(item.id)} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white cursor-pointer transition hover:scale-105"
+                    style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>
+                    <Trash2 className="w-3.5 h-3.5 inline mr-1" />Delete
+                  </button>
+                  <button onClick={() => removeItem(item.id)} className="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition"
+                    style={{ background: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0" }}>
+                    <CheckCircle className="w-3.5 h-3.5 inline mr-1" />Approve
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ═══════════ 5 · SUPPORT TICKETS ═══════════
+function SupportTickets({ tickets, setTickets }: { tickets: Ticket[]; setTickets: React.Dispatch<React.SetStateAction<Ticket[]>> }) {
+  const changeStatus = (id: number, s: Ticket["status"]) => setTickets(prev => prev.map(t => t.id === id ? { ...t, status: s } : t))
+  const sorted = [...tickets].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const prioColors: Record<string, { bg: string; text: string }> = { High: { bg: "#fef2f2", text: "#991b1b" }, Medium: { bg: "#fffbeb", text: "#92400e" }, Low: { bg: "#f3f4f6", text: "#6b7280" } }
+  const statColors: Record<string, { bg: string; text: string; border: string }> = {
+    Open: { bg: "#fffbeb", text: "#92400e", border: "#fde68a" }, "In Progress": { bg: "#eff6ff", text: "#1d4ed8", border: "#bfdbfe" }, Resolved: { bg: "#ecfdf5", text: "#047857", border: "#a7f3d0" },
+  }
+
+  return (
+    <div className="space-y-4">
+      {sorted.map(ticket => {
+        const pc = prioColors[ticket.priority]; const sc = statColors[ticket.status]
+        return (
+          <div key={ticket.id} className="rounded-2xl p-5 transition-all hover:-translate-y-0.5"
+            style={{ background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", borderLeft: `4px solid ${sc.border}` }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.08)" }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.06)" }}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-semibold truncate" style={{ color: "#064e3b" }}>{ticket.subject}</h3>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0" style={{ background: pc.bg, color: pc.text }}>{ticket.priority}</span>
+                </div>
+                <p className="text-xs" style={{ color: "#9ca3af" }}>{ticket.user} · {ticket.date}</p>
+              </div>
+              <div className="relative shrink-0">
+                <select value={ticket.status} onChange={e => changeStatus(ticket.id, e.target.value as Ticket["status"])}
+                  className="appearance-none pl-3 pr-8 py-2 rounded-lg text-xs font-semibold cursor-pointer outline-none transition"
+                  style={{ background: sc.bg, color: sc.text, border: `1px solid ${sc.border}` }}>
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: sc.text }} />
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ═══════════ 6 · MASTER DATA ═══════════
+function MasterData({ ailments, setAilments }: { ailments: string[]; setAilments: React.Dispatch<React.SetStateAction<string[]>> }) {
   const [newAilment, setNewAilment] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
-
-  const addAilment = () => {
-    const trimmed = newAilment.trim()
-    if (!trimmed) return
-    if (ailments.some((a) => a.toLowerCase() === trimmed.toLowerCase())) return
-    setAilments((prev) => [...prev, trimmed].sort())
-    setNewAilment("")
-  }
-
-  const removeAilment = (name: string) => {
-    setAilments((prev) => prev.filter((a) => a !== name))
-  }
-
-  const filtered = ailments.filter((a) => a.toLowerCase().includes(searchTerm.toLowerCase()))
+  const addAilment = () => { const t = newAilment.trim(); if (!t || ailments.some(a => a.toLowerCase() === t.toLowerCase())) return; setAilments(prev => [...prev, t].sort()); setNewAilment("") }
+  const filtered = ailments.filter(a => a.toLowerCase().includes(searchTerm.toLowerCase()))
 
   return (
     <div className="grid lg:grid-cols-3 gap-6">
-      {/* Add form */}
-      <Card className="lg:col-span-1">
-        <CardHeader>
-          <CardTitle className="text-lg">Add New Ailment</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <input
-            type="text"
-            value={newAilment}
-            onChange={(e) => setNewAilment(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addAilment()}
-            placeholder="e.g., Bronchitis"
-            className="w-full px-4 py-2.5 rounded-lg border border-border bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary transition"
-          />
-          <Button
-            onClick={addAilment}
-            disabled={!newAilment.trim()}
-            className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-          >
-            <Plus className="w-4 h-4 mr-1.5" />
-            Add Ailment
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            Total: <span className="font-semibold text-foreground">{ailments.length}</span> ailments in the database
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Ailments list */}
-      <Card className="lg:col-span-2">
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <CardTitle className="text-lg">Current Ailments</CardTitle>
-          <div className="relative w-full sm:w-56">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Filter…"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-card text-foreground text-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary transition"
-            />
+      <div className="lg:col-span-1 rounded-2xl p-6" style={{ background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+        <h3 className="text-lg font-bold mb-4" style={{ color: "#064e3b" }}>Add New Ailment</h3>
+        <div className="space-y-4">
+          <input type="text" value={newAilment} onChange={e => setNewAilment(e.target.value)} onKeyDown={e => e.key === "Enter" && addAilment()}
+            placeholder="e.g., Bronchitis" className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition" style={{ border: "1px solid #d1fae5", color: "#374151", background: "#f8fdf9" }} />
+          <button onClick={addAilment} disabled={!newAilment.trim()} className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition cursor-pointer disabled:opacity-50"
+            style={{ background: "linear-gradient(135deg, #059669, #047857)" }}><Plus className="w-4 h-4 inline mr-1" /> Add Ailment</button>
+          <p className="text-xs" style={{ color: "#9ca3af" }}>Total: <span className="font-bold" style={{ color: "#064e3b" }}>{ailments.length}</span> ailments</p>
+        </div>
+      </div>
+      <div className="lg:col-span-2 rounded-2xl p-6" style={{ background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold" style={{ color: "#064e3b" }}>Current Ailments</h3>
+          <div className="relative w-48">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#9ca3af" }} />
+            <input type="text" placeholder="Filter…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-lg text-sm outline-none" style={{ border: "1px solid #d1fae5", color: "#374151" }} />
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {filtered.map((ailment) => (
-              <span
-                key={ailment}
-                className="group inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary/10 text-secondary rounded-full text-sm font-medium hover:bg-secondary/20 transition"
-              >
-                {ailment}
-                <button
-                  onClick={() => removeAilment(ailment)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive/80"
-                  title="Remove"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </span>
-            ))}
-            {filtered.length === 0 && (
-              <p className="text-muted-foreground text-sm py-4">No ailments match your filter.</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {filtered.map(ailment => (
+            <span key={ailment} className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition cursor-default"
+              style={{ background: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0" }}>
+              {ailment}
+              <button onClick={() => setAilments(prev => prev.filter(a => a !== ailment))} className="opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" style={{ color: "#ef4444" }}>
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </span>
+          ))}
+          {filtered.length === 0 && <p className="text-sm py-4" style={{ color: "#9ca3af" }}>No ailments match your filter.</p>}
+        </div>
+      </div>
     </div>
   )
 }
