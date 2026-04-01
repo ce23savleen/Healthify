@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import Link from "next/link"
 import { Search, X, ArrowRight, Sparkles, Filter } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
 
 // Ailments data with descriptions, icons, and image URLs
 const ailmentsData: Record<string, Array<{ name: string; description: string; icon: string; image: string; remedyCount: number }>> = {
@@ -122,10 +123,23 @@ const ailmentsData: Record<string, Array<{ name: string; description: string; ic
 }
 
 export default function AilmentBrowser() {
-  const [selectedLetter, setSelectedLetter] = useState<string | null>(null)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const selectedLetter = searchParams.get("letter")?.toUpperCase() || null
   const [searchTerm, setSearchTerm] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [notFoundMessage, setNotFoundMessage] = useState("")
+
+  const setSelectedLetter = useCallback(
+    (letter: string | null) => {
+      if (letter) {
+        router.push(`?letter=${letter}`, { scroll: false })
+      } else {
+        router.push("?", { scroll: false })
+      }
+    },
+    [router]
+  )
 
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")
 

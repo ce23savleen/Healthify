@@ -244,6 +244,231 @@ const mockAilmentsData: Record<string, MockAilment> = {
       },
     ],
   },
+  allergies: {
+    slug: "allergies",
+    name: "Allergies",
+    description: "An immune system response to a foreign substance that is not typically harmful to your body, such as pollen, pet dander, or certain foods.",
+    causes: ["Airborne allergens", "Certain foods", "Insect stings", "Pet dander"],
+    symptoms: ["Sneezing", "Itchy, runny nose", "Red, watery eyes", "Skin rashes"],
+    prevention: ["Identify and avoid known triggers", "Keep windows closed during high pollen seasons", "Use HEPA air purifiers"],
+    remedies: []
+  },
+  arthritis: {
+    slug: "arthritis",
+    name: "Arthritis",
+    description: "Inflammation of one or more joints, causing pain and stiffness that can worsen with age.",
+    causes: ["Wear and tear of joint cartilage", "Autoimmune disorders", "Genetics"],
+    symptoms: ["Joint pain and stiffness", "Swelling and redness", "Decreased range of motion"],
+    prevention: ["Maintain a healthy weight", "Engage in low-impact exercises", "Consume an anti-inflammatory diet"],
+    remedies: []
+  },
+  asthma: {
+    slug: "asthma",
+    name: "Asthma",
+    description: "A condition in which your airways narrow and swell and may produce extra mucus, making breathing difficult.",
+    causes: ["Airborne allergens", "Respiratory infections", "Cold air"],
+    symptoms: ["Shortness of breath", "Chest tightness", "Wheezing"],
+    prevention: ["Avoid asthma triggers", "Get vaccinated for flu", "Keep indoor air clean"],
+    remedies: []
+  },
+  "common-cold": {
+    slug: "common-cold",
+    name: "Common Cold",
+    description: "A viral infection of your nose and throat. It is usually harmless, although it might not feel that way.",
+    causes: ["Rhinoviruses", "Close contact with infected individuals", "Touching contaminated surfaces"],
+    symptoms: ["Runny or stuffy nose", "Sore throat", "Cough and congestion"],
+    prevention: ["Wash hands thoroughly", "Avoid touching your face", "Maintain a strong immune system"],
+    remedies: []
+  },
+  cough: {
+    slug: "cough",
+    name: "Cough",
+    description: "A reflex action that clears your airway of irritants and mucus.",
+    causes: ["Viral infections", "Postnasal drip", "Environmental irritants"],
+    symptoms: ["Frequent throat clearing", "Tickling sensation in throat", "Hoarseness"],
+    prevention: ["Stay hydrated", "Use a humidifier", "Avoid secondhand smoke"],
+    remedies: []
+  },
+  dandruff: {
+    slug: "dandruff",
+    name: "Dandruff",
+    description: "A common condition that causes the skin on the scalp to flake.",
+    causes: ["Irritated, oily skin", "Not shampooing enough", "Dry skin"],
+    symptoms: ["Skin flakes on your scalp", "Itchy scalp", "Mild redness"],
+    prevention: ["Shampoo regularly", "Manage stress", "Limit styling products"],
+    remedies: []
+  },
+  eczema: {
+    slug: "eczema",
+    name: "Eczema",
+    description: "A condition that makes your skin red and itchy. It tends to flare periodically.",
+    causes: ["Genetic variation", "Immune system overreaction", "Environmental triggers"],
+    symptoms: ["Dry, scaly skin", "Red to brownish-gray patches", "Severe itching"],
+    prevention: ["Moisturize skin daily", "Take shorter, warm showers", "Wear breathable fabrics"],
+    remedies: []
+  },
+  fever: {
+    slug: "fever",
+    name: "Fever",
+    description: "A temporary increase in your body temperature, often due to an illness.",
+    causes: ["Viral or bacterial infections", "Heat exhaustion", "Inflammatory conditions"],
+    symptoms: ["Elevated body temperature", "Sweating and chills", "Muscle aches"],
+    prevention: ["Practice good hygiene", "Stay up to date on vaccinations", "Avoid close contact with sick individuals"],
+    remedies: []
+  },
+  gastritis: {
+    slug: "gastritis",
+    name: "Gastritis",
+    description: "An inflammation, irritation, or erosion of the lining of the stomach.",
+    causes: ["Bacterial infection", "Regular use of pain relievers", "Stress"],
+    symptoms: ["Burning ache in abdomen", "Nausea and vomiting", "Feeling of fullness"],
+    prevention: ["Eat smaller meals", "Avoid irritating foods", "Manage stress"],
+    remedies: []
+  },
+  "muscle-pain": {
+    slug: "muscle-pain",
+    name: "Muscle Pain",
+    description: "A common condition characterized by ache or pain in the muscles.",
+    causes: ["Muscle tension", "Overuse from physical activity", "Poor posture"],
+    symptoms: ["Deep ache or sharp pain", "Tenderness", "Muscle spasms"],
+    prevention: ["Warm up before exercising", "Stretch regularly", "Practice good ergonomics"],
+    remedies: []
+  },
+  sinusitis: {
+    slug: "sinusitis",
+    name: "Sinusitis",
+    description: "An inflammation or swelling of the tissue lining the sinuses.",
+    causes: ["Common cold virus", "Nasal polyps", "Allergies"],
+    symptoms: ["Thick nasal discharge", "Nasal congestion", "Pain around eyes and cheeks"],
+    prevention: ["Avoid upper respiratory infections", "Manage allergies", "Use a humidifier"],
+    remedies: []
+  },
+  "urinary-tract-infection": {
+    slug: "urinary-tract-infection",
+    name: "Urinary Tract Infection",
+    description: "An infection in any part of your urinary system.",
+    causes: ["Bacteria entering the urinary tract", "Dehydration", "Holding urine"],
+    symptoms: ["Strong urge to urinate", "Burning sensation", "Cloudy urine"],
+    prevention: ["Drink plenty of water", "Wipe front to back", "Empty bladder frequently"],
+    remedies: []
+  },
+  bloating: {
+    slug: "bloating",
+    name: "Bloating",
+    description: "A condition where your belly feels full, tight, and uncomfortable, often due to a buildup of gas in the digestive tract.",
+    causes: ["Eating too quickly or overeating", "Digestive issues like IBS or food intolerances", "Carbonated beverages"],
+    symptoms: ["Feeling of fullness in the abdomen", "Visibly swollen stomach", "Excessive gas or belching"],
+    prevention: ["Eat smaller meals more slowly", "Identify and avoid trigger foods", "Stay hydrated"],
+    remedies: []
+  },
+  blisters: {
+    slug: "blisters",
+    name: "Blisters",
+    description: "Small pockets of fluid that form on the upper layers of the skin, typically serving as a protective cushion.",
+    causes: ["Friction from ill-fitting shoes", "Burns or excessive sun exposure", "Allergic reactions"],
+    symptoms: ["Raised, fluid-filled bubble on the skin", "Pain or tenderness when pressed", "Redness surrounding the area"],
+    prevention: ["Wear comfortable, well-fitting shoes", "Apply sunscreen", "Keep skin dry in areas prone to friction"],
+    remedies: []
+  },
+  bronchitis: {
+    slug: "bronchitis",
+    name: "Bronchitis",
+    description: "An inflammation of the lining of your bronchial tubes, which carry air to and from your lungs.",
+    causes: ["Viral infections", "Bacterial infections", "Exposure to tobacco smoke"],
+    symptoms: ["Persistent cough", "Fatigue", "Shortness of breath"],
+    prevention: ["Avoid cigarette smoke", "Wash hands frequently", "Get a yearly flu vaccine"],
+    remedies: []
+  },
+  constipation: {
+    slug: "constipation",
+    name: "Constipation",
+    description: "A common digestive issue characterized by infrequent bowel movements or difficulty passing stools.",
+    causes: ["Lack of dietary fiber", "Inadequate fluid intake", "Lack of physical activity"],
+    symptoms: ["Passing fewer than three stools a week", "Lumpy or hard stools", "Straining to have bowel movements"],
+    prevention: ["Include high-fiber foods in diet", "Drink plenty of water", "Stay active and exercise"],
+    remedies: []
+  },
+  cramps: {
+    slug: "cramps",
+    name: "Cramps",
+    description: "Sudden, involuntary muscle contractions or over-shortening; while generally temporary, they can cause pain.",
+    causes: ["Muscle overuse or strain", "Dehydration", "Depletion of electrolytes"],
+    symptoms: ["Sudden, sharp pain in a muscle", "Hard lump of muscle tissue", "Temporary inability to use the muscle"],
+    prevention: ["Stay hydrated", "Stretch muscles before use", "Maintain a diet rich in essential minerals"],
+    remedies: []
+  },
+  depression: {
+    slug: "depression",
+    name: "Depression",
+    description: "A mood disorder that causes a persistent feeling of sadness and loss of interest.",
+    causes: ["Biological differences in the brain", "Hormonal changes", "Highly stressful life events"],
+    symptoms: ["Feelings of sadness or emptiness", "Loss of interest in normal activities", "Sleep disturbances"],
+    prevention: ["Control stress and increase resilience", "Maintain a regular sleep schedule", "Engage in regular physical activity"],
+    remedies: []
+  },
+  diarrhea: {
+    slug: "diarrhea",
+    name: "Diarrhea",
+    description: "Loose, watery, and possibly more frequent bowel movements.",
+    causes: ["Viruses like norovirus", "Bacteria from contaminated food", "Certain medications"],
+    symptoms: ["Frequent, loose stools", "Abdominal cramps", "Bloating and nausea"],
+    prevention: ["Wash hands frequently", "Practice safe food handling", "Drink bottled water when traveling"],
+    remedies: []
+  },
+  "ear-infection": {
+    slug: "ear-infection",
+    name: "Ear Infection",
+    description: "An infection of the middle ear, the air-filled space behind the eardrum.",
+    causes: ["Bacterium or virus in the middle ear", "Fluid buildup due to colds", "Changes in air pressure"],
+    symptoms: ["Ear pain", "Trouble hearing", "Fluid drainage from the ear"],
+    prevention: ["Prevent common colds", "Avoid secondhand smoke", "Manage seasonal allergies"],
+    remedies: []
+  },
+  fatigue: {
+    slug: "fatigue",
+    name: "Fatigue",
+    description: "A lingering tiredness that is constant and limiting.",
+    causes: ["Poor sleep habits", "Anemia or thyroid issues", "Chronic stress"],
+    symptoms: ["Unexplained exhaustion", "Difficulty concentrating", "Muscle weakness"],
+    prevention: ["Prioritize 7-9 hours of sleep", "Eat a balanced diet", "Practice stress-reduction techniques"],
+    remedies: []
+  },
+  "fungal-infection": {
+    slug: "fungal-infection",
+    name: "Fungal Infection",
+    description: "A skin disease caused by a fungus, thriving in warm, moist environments.",
+    causes: ["Contact with fungi on surfaces", "Person-to-person transmission", "Wearing damp clothing"],
+    symptoms: ["Red, itchy rash", "Peeling or cracking skin", "Blisters or sores"],
+    prevention: ["Keep skin clean and dry", "Change socks daily", "Avoid walking barefoot in public showers"],
+    remedies: []
+  },
+  "kidney-stones": {
+    slug: "kidney-stones",
+    name: "Kidney Stones",
+    description: "Hard deposits made of minerals and salts that form inside your kidneys.",
+    causes: ["Not drinking enough water", "Diets high in protein or salt", "Certain medical conditions"],
+    symptoms: ["Severe, sharp pain in the side and back", "Pain radiating to lower abdomen", "Cloudy or pink urine"],
+    prevention: ["Drink plenty of water", "Eat fewer oxalate-rich foods", "Choose a diet low in salt"],
+    remedies: []
+  },
+  osteoporosis: {
+    slug: "osteoporosis",
+    name: "Osteoporosis",
+    description: "A bone disease that causes bones to become weak and brittle.",
+    causes: ["Aging and lowered estrogen levels", "Low calcium intake", "Sedentary lifestyle"],
+    symptoms: ["Back pain", "Loss of height over time", "A stooped posture"],
+    prevention: ["Consume adequate calcium and vitamin D", "Engage in weight-bearing exercises", "Avoid smoking"],
+    remedies: []
+  },
+  "varicose-veins": {
+    slug: "varicose-veins",
+    name: "Varicose Veins",
+    description: "Twisted, enlarged veins, most commonly affecting those in your legs.",
+    causes: ["Weak or damaged valves in the veins", "Standing or sitting for long periods", "Age and genetics"],
+    symptoms: ["Dark purple or blue veins", "Twisted and bulging veins", "Achy or heavy feeling in legs"],
+    prevention: ["Exercise regularly", "Elevate your legs when resting", "Avoid long periods of sitting or standing"],
+    remedies: []
+  },
 }
 
 export default mockAilmentsData
