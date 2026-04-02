@@ -11,6 +11,16 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
+    "/browse-ailments/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/browse-ailments/page.js"
+    ],
+    "/ailment/[slug]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/ailment/[slug]/page.js"
+    ],
     "/explore-community/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -21,10 +31,35 @@
       "static/chunks/main-app.js",
       "static/chunks/app/blogs/page.js"
     ],
+    "/doctor-verifications/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/doctor-verifications/page.js"
+    ],
+    "/doctor-directory/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/doctor-directory/page.js"
+    ],
+    "/login/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/login/loading.js"
+    ],
+    "/login/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/login/page.js"
+    ],
     "/dashboard/admin/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/admin/page.js"
+    ],
+    "/_not-found/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

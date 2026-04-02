@@ -1,4 +1,4 @@
-// File: C:\Users\Rahul\Downloads\miniproject\Healthify\app\layout.tsx
+// File: C:\Users\Savleen Kaur\OneDrive\Desktop\Healthify all versions\Healthify(GitHub)\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
