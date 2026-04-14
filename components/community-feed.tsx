@@ -239,7 +239,7 @@ export default function CommunityFeed() {
                 <div className="absolute -bottom-20 -left-10 w-80 h-80 rounded-full opacity-10" style={{ background: "radial-gradient(circle, white 0%, transparent 70%)" }} />
                 <div className="absolute top-1/2 right-1/4 w-32 h-32 rounded-full opacity-5" style={{ background: "radial-gradient(circle, white 0%, transparent 70%)" }} />
               </div>
-              
+
               <div className="relative px-8 py-12 md:px-12 md:py-16">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm">
@@ -253,7 +253,7 @@ export default function CommunityFeed() {
                 <p className="text-lg text-emerald-100/80 max-w-2xl leading-relaxed">
                   Discover the most helpful natural remedies shared by our community and verified by trusted healthcare professionals
                 </p>
-                
+
                 {/* Stats Row */}
                 <div className="flex flex-wrap gap-6 mt-8">
                   <div className="flex items-center gap-2">
@@ -297,17 +297,17 @@ export default function CommunityFeed() {
                   style={
                     filter === f.key
                       ? {
-                          background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
-                          color: "white",
-                          boxShadow: "0 4px 14px rgba(5, 150, 105, 0.4)",
-                          transform: "translateY(-1px)",
-                        }
+                        background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
+                        color: "white",
+                        boxShadow: "0 4px 14px rgba(5, 150, 105, 0.4)",
+                        transform: "translateY(-1px)",
+                      }
                       : {
-                          background: "rgba(255,255,255,0.8)",
-                          color: "#064e3b",
-                          border: "1px solid #d1fae5",
-                          backdropFilter: "blur(8px)",
-                        }
+                        background: "rgba(255,255,255,0.8)",
+                        color: "#064e3b",
+                        border: "1px solid #d1fae5",
+                        backdropFilter: "blur(8px)",
+                      }
                   }
                 >
                   {f.icon}
@@ -353,7 +353,7 @@ export default function CommunityFeed() {
                     <div className="absolute inset-0" style={{
                       background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)"
                     }} />
-                    
+
                     {/* Ailment Badge - on image */}
                     <div className="absolute top-3 right-3">
                       <span className="px-3 py-1.5 rounded-full text-xs font-bold text-white backdrop-blur-md" style={{
@@ -363,7 +363,7 @@ export default function CommunityFeed() {
                         {remedy.ailment}
                       </span>
                     </div>
-                    
+
                     {/* Badges on image */}
                     <div className="absolute bottom-3 left-3 flex gap-2">
                       {remedy.isVerified && (
@@ -409,7 +409,7 @@ export default function CommunityFeed() {
 
                     {/* Remedy Title */}
                     <h2 className="text-lg font-bold text-foreground mb-2 group-hover:text-teal-700 transition-colors duration-300 line-clamp-2">{remedy.title}</h2>
-                    
+
                     {/* Description */}
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed">{remedy.description}</p>
 
