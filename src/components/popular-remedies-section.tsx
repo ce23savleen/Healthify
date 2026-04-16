@@ -217,26 +217,25 @@ export default function PopularRemediesSection() {
                 </div>
 
                 {/* Read More */}
-                <Link href={`/ailment/${remedy.ailment}`}>
-                  <button
-                    className="w-full mt-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 group/btn cursor-pointer"
-                    style={{
-                      background: "linear-gradient(135deg, #ecfdf5, #d1fae5)",
-                      color: "#059669",
-                      border: "1px solid #a7f3d020",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "linear-gradient(135deg, #059669, #10b981)"
-                      e.currentTarget.style.color = "white"
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "linear-gradient(135deg, #ecfdf5, #d1fae5)"
-                      e.currentTarget.style.color = "#059669"
-                    }}
-                  >
-                    Read More
-                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
-                  </button>
+                <Link
+                  href={`/ailment/${remedy.ailment}`}
+                  className="w-full mt-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 group/btn cursor-pointer"
+                  style={{
+                    background: "linear-gradient(135deg, #ecfdf5, #d1fae5)",
+                    color: "#059669",
+                    border: "1px solid #a7f3d020",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "linear-gradient(135deg, #059669, #10b981)"
+                    e.currentTarget.style.color = "white"
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "linear-gradient(135deg, #ecfdf5, #d1fae5)"
+                    e.currentTarget.style.color = "#059669"
+                  }}
+                >
+                  Read More
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
                 </Link>
               </div>
             </div>
@@ -245,18 +244,17 @@ export default function PopularRemediesSection() {
 
         {/* View All Button */}
         <div className="text-center mt-12">
-          <Link href="/browse-ailments">
-            <button
-              className="px-8 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-105 inline-flex items-center gap-2 cursor-pointer"
-              style={{
-                background: "linear-gradient(135deg, #059669, #10b981)",
-                color: "white",
-                boxShadow: "0 4px 24px rgba(16,185,129,0.3)",
-              }}
-            >
-              View All Remedies
-              <ArrowRight className="w-5 h-5" />
-            </button>
+          <Link
+            href="/browse-ailments"
+            className="px-8 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-105 inline-flex items-center gap-2 cursor-pointer"
+            style={{
+              background: "linear-gradient(135deg, #059669, #10b981)",
+              color: "white",
+              boxShadow: "0 4px 24px rgba(16,185,129,0.3)",
+            }}
+          >
+            View All Remedies
+            <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
       </div>

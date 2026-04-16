@@ -101,17 +101,16 @@ export default function HeroSection() {
                 placeholder="Search symptoms or remedies (e.g., headache, turmeric, cough)..."
                 className="flex-1 bg-transparent text-white placeholder-emerald-200/50 px-4 py-4 text-sm sm:text-base focus:outline-none"
               />
-              <Link href={searchQuery ? `/browse-ailments?q=${encodeURIComponent(searchQuery)}` : "/browse-ailments"}>
-                <button
-                  className="m-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 hover:scale-105 cursor-pointer"
-                  style={{
-                    background: "linear-gradient(135deg, #059669, #10b981)",
-                    color: "white",
-                    boxShadow: "0 4px 16px rgba(16,185,129,0.4)",
-                  }}
-                >
-                  Search
-                </button>
+              <Link
+                href={searchQuery ? `/browse-ailments?q=${encodeURIComponent(searchQuery)}` : "/browse-ailments"}
+                className="m-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 hover:scale-105 cursor-pointer"
+                style={{
+                  background: "linear-gradient(135deg, #059669, #10b981)",
+                  color: "white",
+                  boxShadow: "0 4px 16px rgba(16,185,129,0.4)",
+                }}
+              >
+                Search
               </Link>
             </div>
           </div>
@@ -121,35 +120,37 @@ export default function HeroSection() {
             className="flex flex-wrap gap-4"
             style={{ animation: "fadeInUp 0.8s ease-out 0.4s both" }}
           >
-            <Link href="/browse-ailments">
-              <Button
-                size="lg"
-                className="rounded-xl px-8 py-6 text-base font-semibold transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer"
-                style={{
-                  background: "linear-gradient(135deg, #059669, #10b981)",
-                  color: "white",
-                  boxShadow: "0 4px 24px rgba(16,185,129,0.4)",
-                }}
-              >
+            <Button
+              asChild
+              size="lg"
+              className="rounded-xl px-8 py-6 text-base font-semibold transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer"
+              style={{
+                background: "linear-gradient(135deg, #059669, #10b981)",
+                color: "white",
+                boxShadow: "0 4px 24px rgba(16,185,129,0.4)",
+              }}
+            >
+              <Link href="/browse-ailments">
                 <Sparkles className="w-5 h-5 mr-2" />
                 Explore Remedies
-              </Button>
-            </Link>
-            <Link href="#ai-assistant">
-              <Button
-                size="lg"
-                className="rounded-xl px-8 py-6 text-base font-semibold transition-all duration-300 hover:scale-105 cursor-pointer"
-                style={{
-                  background: "rgba(255,255,255,0.1)",
-                  backdropFilter: "blur(12px)",
-                  border: "1px solid rgba(255,255,255,0.25)",
-                  color: "white",
-                }}
-              >
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              className="rounded-xl px-8 py-6 text-base font-semibold transition-all duration-300 hover:scale-105 cursor-pointer"
+              style={{
+                background: "rgba(255,255,255,0.1)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(255,255,255,0.25)",
+                color: "white",
+              }}
+            >
+              <Link href="#ai-assistant">
                 <MessageCircle className="w-5 h-5 mr-2" />
                 Talk to AI Health Assistant
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
 
           {/* Stats Row */}

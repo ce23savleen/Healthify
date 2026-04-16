@@ -105,44 +105,41 @@ export default function Navigation() {
           <div className="hidden md:flex items-center gap-3">
             {!isLoggedIn ? (
               <>
-                <Link href="/login">
-                  <Button
-                    className="rounded-lg px-4 text-sm font-medium transition-all duration-300"
-                    style={{
-                      background: "transparent",
-                      color: scrolled ? "#064e3b" : "white",
-                      border: scrolled ? "1px solid #d1fae5" : "1px solid rgba(255,255,255,0.2)",
-                    }}
-                  >
-                    Login
-                  </Button>
-                </Link>
-                <Link href="/signup">
-                  <Button
-                    className="rounded-lg px-5 text-sm font-semibold transition-all duration-300 hover:scale-105"
-                    style={{
-                      background: "linear-gradient(135deg, #059669, #10b981)",
-                      color: "white",
-                      boxShadow: "0 2px 12px rgba(16,185,129,0.3)",
-                    }}
-                  >
-                    Get Started
-                  </Button>
-                </Link>
+                <Button
+                  asChild
+                  className="rounded-lg px-4 text-sm font-medium transition-all duration-300"
+                  style={{
+                    background: "transparent",
+                    color: scrolled ? "#064e3b" : "white",
+                    border: scrolled ? "1px solid #d1fae5" : "1px solid rgba(255,255,255,0.2)",
+                  }}
+                >
+                  <Link href="/login">Login</Link>
+                </Button>
+                <Button
+                  asChild
+                  className="rounded-lg px-5 text-sm font-semibold transition-all duration-300 hover:scale-105"
+                  style={{
+                    background: "linear-gradient(135deg, #059669, #10b981)",
+                    color: "white",
+                    boxShadow: "0 2px 12px rgba(16,185,129,0.3)",
+                  }}
+                >
+                  <Link href="/signup">Get Started</Link>
+                </Button>
               </>
             ) : (
               <>
-                <Link href={isDoctor ? "/dashboard/doctor" : "/dashboard/user"}>
-                  <Button
-                    className="rounded-lg px-4 text-sm font-medium"
-                    style={{
-                      background: scrolled ? "#ecfdf5" : "rgba(255,255,255,0.1)",
-                      color: scrolled ? "#064e3b" : "white",
-                    }}
-                  >
-                    {user?.name || "Dashboard"}
-                  </Button>
-                </Link>
+                <Button
+                  asChild
+                  className="rounded-lg px-4 text-sm font-medium"
+                  style={{
+                    background: scrolled ? "#ecfdf5" : "rgba(255,255,255,0.1)",
+                    color: scrolled ? "#064e3b" : "white",
+                  }}
+                >
+                  <Link href={isDoctor ? "/dashboard/doctor" : "/dashboard/user"}>{user?.name || "Dashboard"}</Link>
+                </Button>
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-300 cursor-pointer"
@@ -204,33 +201,34 @@ export default function Navigation() {
             <div className="px-4 py-2 space-y-2 border-t pt-4" style={{ borderColor: "#d1fae5" }}>
               {!isLoggedIn ? (
                 <>
-                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start text-sm" style={{ color: "#374151" }}>
+                  <Button asChild variant="ghost" className="w-full justify-start text-sm" style={{ color: "#374151" }}>
+                    <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                       Login
-                    </Button>
-                  </Link>
-                  <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
-                    <Button
-                      className="w-full text-sm font-semibold"
-                      style={{
-                        background: "linear-gradient(135deg, #059669, #10b981)",
-                        color: "white",
-                      }}
-                    >
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    className="w-full text-sm font-semibold"
+                    style={{
+                      background: "linear-gradient(135deg, #059669, #10b981)",
+                      color: "white",
+                    }}
+                  >
+                    <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
                       Get Started
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </>
               ) : (
                 <>
-                  <Link
-                    href={isDoctor ? "/dashboard/doctor" : "/dashboard/user"}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Button variant="ghost" className="w-full justify-start text-sm" style={{ color: "#374151" }}>
+                  <Button asChild variant="ghost" className="w-full justify-start text-sm" style={{ color: "#374151" }}>
+                    <Link
+                      href={isDoctor ? "/dashboard/doctor" : "/dashboard/user"}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
                       {user?.name || "Dashboard"}
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                   <Button
                     variant="outline"
                     className="w-full bg-transparent text-sm"

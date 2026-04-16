@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Heart, MessageCircle, Share2, CheckCircle, AlertCircle, TrendingUp, Sparkles, ShieldCheck, Flame, Clock, ArrowRight, BookOpen } from "lucide-react"
+import { Star, MessageCircle, Share2, CheckCircle, AlertCircle, TrendingUp, Sparkles, ShieldCheck, Flame, Clock, ArrowRight, BookOpen } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 
 type FilterType = "trending" | "new" | "verified"
@@ -147,7 +147,8 @@ interface Comment {
 export default function CommunityFeed() {
   const { isLoggedIn, user } = useAuth()
   const [filter, setFilter] = useState<FilterType>("trending")
-  const [likedRemedies, setLikedRemedies] = useState<number[]>([])
+  const [userRatings, setUserRatings] = useState<Record<number, number>>({})
+  const [hoveredStar, setHoveredStar] = useState<{ remedyId: number; star: number } | null>(null)
   const [communityRemedies, setCommunityRemedies] = useState(defaultCommunityRemedies)
   const [selectedRemedy, setSelectedRemedy] = useState<(typeof defaultCommunityRemedies)[0] | null>(null)
   const [remedyComments, setRemedyComments] = useState<Record<number, Comment[]>>({})
@@ -192,8 +193,17 @@ export default function CommunityFeed() {
     return filtered
   }
 
-  const toggleLike = (remedyId: number) => {
-    setLikedRemedies((prev) => (prev.includes(remedyId) ? prev.filter((id) => id !== remedyId) : [...prev, remedyId]))
+  const handleRate = (remedyId: number, rating: number) => {
+    setUserRatings((prev) => ({ ...prev, [remedyId]: rating }))
+  }
+
+  const getAverageRating = (remedy: { likes: number }, remedyId: number): number => {
+    const baseRating = Math.min(5, Math.max(3.0, 3.0 + (remedy.likes / 250)))
+    const userRating = userRatings[remedyId]
+    if (userRating) {
+      return Math.round(((baseRating + userRating) / 2) * 10) / 10
+    }
+    return Math.round(baseRating * 10) / 10
   }
 
   const handlePostComment = () => {
@@ -239,7 +249,7 @@ export default function CommunityFeed() {
                 <div className="absolute -bottom-20 -left-10 w-80 h-80 rounded-full opacity-10" style={{ background: "radial-gradient(circle, white 0%, transparent 70%)" }} />
                 <div className="absolute top-1/2 right-1/4 w-32 h-32 rounded-full opacity-5" style={{ background: "radial-gradient(circle, white 0%, transparent 70%)" }} />
               </div>
-              
+
               <div className="relative px-8 py-12 md:px-12 md:py-16">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm">
@@ -253,7 +263,7 @@ export default function CommunityFeed() {
                 <p className="text-lg text-emerald-100/80 max-w-2xl leading-relaxed">
                   Discover the most helpful natural remedies shared by our community and verified by trusted healthcare professionals
                 </p>
-                
+
                 {/* Stats Row */}
                 <div className="flex flex-wrap gap-6 mt-8">
                   <div className="flex items-center gap-2">
@@ -276,11 +286,11 @@ export default function CommunityFeed() {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                      <Heart className="w-4 h-4 text-emerald-200" />
+                      <Star className="w-4 h-4 text-emerald-200" />
                     </div>
                     <div>
-                      <p className="text-white font-semibold text-sm">12K+</p>
-                      <p className="text-emerald-200/60 text-xs">Community Likes</p>
+                      <p className="text-white font-semibold text-sm">4.5★</p>
+                      <p className="text-emerald-200/60 text-xs">Avg Rating</p>
                     </div>
                   </div>
                 </div>
@@ -297,17 +307,17 @@ export default function CommunityFeed() {
                   style={
                     filter === f.key
                       ? {
-                          background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
-                          color: "white",
-                          boxShadow: "0 4px 14px rgba(5, 150, 105, 0.4)",
-                          transform: "translateY(-1px)",
-                        }
+                        background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
+                        color: "white",
+                        boxShadow: "0 4px 14px rgba(5, 150, 105, 0.4)",
+                        transform: "translateY(-1px)",
+                      }
                       : {
-                          background: "rgba(255,255,255,0.8)",
-                          color: "#064e3b",
-                          border: "1px solid #d1fae5",
-                          backdropFilter: "blur(8px)",
-                        }
+                        background: "rgba(255,255,255,0.8)",
+                        color: "#064e3b",
+                        border: "1px solid #d1fae5",
+                        backdropFilter: "blur(8px)",
+                      }
                   }
                 >
                   {f.icon}
@@ -353,7 +363,7 @@ export default function CommunityFeed() {
                     <div className="absolute inset-0" style={{
                       background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)"
                     }} />
-                    
+
                     {/* Ailment Badge - on image */}
                     <div className="absolute top-3 right-3">
                       <span className="px-3 py-1.5 rounded-full text-xs font-bold text-white backdrop-blur-md" style={{
@@ -363,7 +373,7 @@ export default function CommunityFeed() {
                         {remedy.ailment}
                       </span>
                     </div>
-                    
+
                     {/* Badges on image */}
                     <div className="absolute bottom-3 left-3 flex gap-2">
                       {remedy.isVerified && (
@@ -409,26 +419,42 @@ export default function CommunityFeed() {
 
                     {/* Remedy Title */}
                     <h2 className="text-lg font-bold text-foreground mb-2 group-hover:text-teal-700 transition-colors duration-300 line-clamp-2">{remedy.title}</h2>
-                    
+
                     {/* Description */}
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed">{remedy.description}</p>
 
                     {/* Interaction Buttons */}
                     <div className="flex items-center justify-between pt-4 border-t border-emerald-100/60">
                       <div className="flex items-center gap-5">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            toggleLike(remedy.id)
-                          }}
-                          className="flex items-center gap-1.5 text-sm transition-all duration-300 hover:scale-105"
-                          style={{ color: likedRemedies.includes(remedy.id) ? "#dc2626" : "#6b7280" }}
-                        >
-                          <Heart
-                            className={`w-4.5 h-4.5 transition-all duration-300 ${likedRemedies.includes(remedy.id) ? "fill-red-500 text-red-500 scale-110" : "hover:text-red-400"}`}
-                          />
-                          <span className="font-medium">{remedy.likes + (likedRemedies.includes(remedy.id) ? 1 : 0)}</span>
-                        </button>
+                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          {[1, 2, 3, 4, 5].map((star) => {
+                            const avg = getAverageRating(remedy, remedy.id)
+                            const hovered = hoveredStar?.remedyId === remedy.id ? hoveredStar.star : 0
+                            const displayRating = hovered || userRatings[remedy.id] || avg
+                            const filled = star <= Math.round(displayRating)
+                            return (
+                              <button
+                                key={star}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleRate(remedy.id, star)
+                                }}
+                                onMouseEnter={() => setHoveredStar({ remedyId: remedy.id, star })}
+                                onMouseLeave={() => setHoveredStar(null)}
+                                className="transition-all duration-200 hover:scale-125 cursor-pointer p-0 border-0 bg-transparent"
+                              >
+                                <Star
+                                  className={`w-4 h-4 transition-colors duration-200 ${
+                                    filled ? "fill-amber-400 text-amber-400" : "text-gray-300"
+                                  }`}
+                                />
+                              </button>
+                            )
+                          })}
+                          <span className="text-sm font-medium text-slate-500 ml-0.5">
+                            {getAverageRating(remedy, remedy.id).toFixed(1)}
+                          </span>
+                        </div>
                         <button
                           onClick={(e) => e.stopPropagation()}
                           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-teal-600 transition-all duration-300"
@@ -597,20 +623,35 @@ export default function CommunityFeed() {
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-4 pt-6 border-t border-emerald-100 mb-8">
-                  <button
-                    onClick={() => toggleLike(selectedRemedy.id)}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300"
-                    style={{
-                      background: likedRemedies.includes(selectedRemedy.id) ? "linear-gradient(135deg, #fef2f2, #fee2e2)" : "#fef2f2",
-                      color: likedRemedies.includes(selectedRemedy.id) ? "#dc2626" : "#6b7280",
-                      border: likedRemedies.includes(selectedRemedy.id) ? "1px solid #fca5a5" : "1px solid #fecdd3",
-                    }}
-                  >
-                    <Heart
-                      className={`w-5 h-5 ${likedRemedies.includes(selectedRemedy.id) ? "fill-red-500 text-red-500" : ""}`}
-                    />
-                    {selectedRemedy.likes + (likedRemedies.includes(selectedRemedy.id) ? 1 : 0)}
-                  </button>
+                  <div className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl" style={{
+                    background: "#fffbeb",
+                    border: "1px solid #fde68a",
+                  }}>
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      const avg = getAverageRating(selectedRemedy, selectedRemedy.id)
+                      const hovered = hoveredStar?.remedyId === selectedRemedy.id ? hoveredStar.star : 0
+                      const displayRating = hovered || userRatings[selectedRemedy.id] || avg
+                      const filled = star <= Math.round(displayRating)
+                      return (
+                        <button
+                          key={star}
+                          onClick={() => handleRate(selectedRemedy.id, star)}
+                          onMouseEnter={() => setHoveredStar({ remedyId: selectedRemedy.id, star })}
+                          onMouseLeave={() => setHoveredStar(null)}
+                          className="transition-all duration-200 hover:scale-125 cursor-pointer p-0 border-0 bg-transparent"
+                        >
+                          <Star
+                            className={`w-5 h-5 transition-colors duration-200 ${
+                              filled ? "fill-amber-400 text-amber-400" : "text-gray-300"
+                            }`}
+                          />
+                        </button>
+                      )
+                    })}
+                    <span className="text-sm font-semibold text-slate-500 ml-1">
+                      {getAverageRating(selectedRemedy, selectedRemedy.id).toFixed(1)}
+                    </span>
+                  </div>
                   <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground transition-all duration-300" style={{
                     background: "#f3f4f6",
                     border: "1px solid #e5e7eb",

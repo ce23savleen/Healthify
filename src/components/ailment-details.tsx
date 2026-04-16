@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Heart, MessageCircle, Share2, Bookmark, AlertCircle, X, ShieldCheck, BadgeCheck, Star, Clock, Users, ArrowRight } from "lucide-react"
+import { MessageCircle, Share2, Bookmark, AlertCircle, X, ShieldCheck, BadgeCheck, Star, Clock, Users, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
 import mockAilmentsData, { type MockAilment, type MockRemedy } from "@/data/mockAilmentsData"
@@ -12,7 +12,8 @@ import remediesData from "@/data/remedies"
 
 export default function AilmentDetails({ slug }: { slug: string }) {
   const { isLoggedIn, user } = useAuth()
-  const [likedRemedies, setLikedRemedies] = useState<number[]>([])
+  const [userRatings, setUserRatings] = useState<Record<number, number>>({})
+  const [hoveredStar, setHoveredStar] = useState<{ remedyId: number; star: number } | null>(null)
   const [savedRemedies, setSavedRemedies] = useState<number[]>([])
   const [showCommentForm, setShowCommentForm] = useState<number | null>(null)
   const [comments, setComments] = useState<Record<number, Array<{ text: string; author: string }>>>({})
@@ -34,12 +35,12 @@ export default function AilmentDetails({ slug }: { slug: string }) {
   // Build ailment info from whichever source is available
   const ailment = mockAilment
     ? {
-        name: mockAilment.name,
-        description: mockAilment.description,
-        causes: mockAilment.causes,
-        symptoms: mockAilment.symptoms,
-        prevention: mockAilment.prevention,
-      }
+      name: mockAilment.name,
+      description: mockAilment.description,
+      causes: mockAilment.causes,
+      symptoms: mockAilment.symptoms,
+      prevention: mockAilment.prevention,
+    }
     : legacyAilment
       ? legacyAilment
       : null
@@ -53,9 +54,9 @@ export default function AilmentDetails({ slug }: { slug: string }) {
           <p className="text-muted-foreground mb-6">
             We don&apos;t have information for &ldquo;{slug.replace(/-/g, " ")}&rdquo; yet.
           </p>
-          <Link href="/browse-ailments">
-            <Button className="bg-teal-600 hover:bg-teal-700">Browse All Ailments</Button>
-          </Link>
+          <Button asChild className="bg-teal-600 hover:bg-teal-700">
+            <Link href="/browse-ailments">Browse All Ailments</Link>
+          </Button>
         </div>
       </section>
     )
@@ -107,16 +108,20 @@ export default function AilmentDetails({ slug }: { slug: string }) {
     action()
   }
 
-  const toggleLike = (remedyId: number) => {
+  const handleRate = (remedyId: number, rating: number) => {
     handleProtectedAction(() => {
-      setLikedRemedies((prev) => {
-        const updated = prev.includes(remedyId) ? prev.filter((id) => id !== remedyId) : [...prev, remedyId]
-        if (!prev.includes(remedyId)) {
-          showSuccessNotification("Remedy liked successfully")
-        }
-        return updated
-      })
+      setUserRatings((prev) => ({ ...prev, [remedyId]: rating }))
+      showSuccessNotification("Rating submitted successfully")
     })
+  }
+
+  const getAverageRating = (remedy: any, remedyId: number): number => {
+    const baseRating = Math.min(5, Math.max(3.0, 3.0 + (remedy.likes / 250)))
+    const userRating = userRatings[remedyId]
+    if (userRating) {
+      return Math.round(((baseRating + userRating) / 2) * 10) / 10
+    }
+    return Math.round(baseRating * 10) / 10
   }
 
   const toggleSaveRemedy = (remedyId: number, remedyTitle: string) => {
@@ -179,7 +184,7 @@ export default function AilmentDetails({ slug }: { slug: string }) {
             text: shareText,
             url: window.location.href,
           })
-          .catch(() => {})
+          .catch(() => { })
       } else {
         navigator.clipboard.writeText(shareText)
         showSuccessNotification("Remedy link copied to clipboard!")
@@ -289,13 +294,13 @@ export default function AilmentDetails({ slug }: { slug: string }) {
             {remedies.map((remedy) => {
               const verifiedCount = getVerifiedCount(remedy)
               const doctorEndorsed = hasCurrentDoctorEndorsed(remedy)
-              const likeCount = remedy.likes + (likedRemedies.includes(remedy.id) ? 1 : 0)
+              const avgRating = getAverageRating(remedy, remedy.id)
 
               // Extract keywords for ingredient tags
               const ingredientKeywords = (remedy.description || "")
                 .match(/\b(turmeric|ginger|honey|lemon|milk|tea|oil|aloe vera|pepper|garlic|salt|water|cinnamon|basil|tulsi|eucalyptus|peppermint|chamomile|coconut|vinegar|oatmeal|fennel|cumin|neem|yogurt|banana|flaxseed|cherry)\b/gi)
-              const ingredients = ingredientKeywords
-                ? [...new Set(ingredientKeywords.map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()))].slice(0, 4)
+              const ingredients: string[] = ingredientKeywords
+                ? [...new Set<string>(ingredientKeywords.map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()))].slice(0, 4)
                 : []
 
               // Map remedy image from available public images
@@ -452,20 +457,34 @@ export default function AilmentDetails({ slug }: { slug: string }) {
 
                     {/* Action Buttons */}
                     <div className="flex items-center gap-2 pt-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleLike(remedy.id)
-                        }}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                          likedRemedies.includes(remedy.id)
-                            ? "bg-red-500 text-white"
-                            : "bg-red-50 text-red-500 hover:bg-red-100"
-                        }`}
-                      >
-                        <Heart className={`w-3.5 h-3.5 ${likedRemedies.includes(remedy.id) ? "fill-current" : ""}`} />
-                        {likeCount}
-                      </button>
+                      <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                        {[1, 2, 3, 4, 5].map((star) => {
+                          const hovered = hoveredStar?.remedyId === remedy.id ? hoveredStar?.star ?? 0 : 0
+                          const displayRating = hovered || userRatings[remedy.id] || avgRating
+                          const filled = star <= Math.round(displayRating)
+                          return (
+                            <button
+                              key={star}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleRate(remedy.id, star)
+                              }}
+                              onMouseEnter={() => setHoveredStar({ remedyId: remedy.id, star })}
+                              onMouseLeave={() => setHoveredStar(null)}
+                              className="transition-all duration-200 hover:scale-125 cursor-pointer p-0 border-0 bg-transparent"
+                            >
+                              <Star
+                                className={`w-3.5 h-3.5 transition-colors duration-200 ${
+                                  filled ? "fill-amber-400 text-amber-400" : "text-gray-300"
+                                }`}
+                              />
+                            </button>
+                          )
+                        })}
+                        <span className="text-xs font-medium text-slate-500 ml-1">
+                          {avgRating.toFixed(1)}
+                        </span>
+                      </div>
 
                       <button
                         onClick={(e) => {
@@ -497,11 +516,10 @@ export default function AilmentDetails({ slug }: { slug: string }) {
                             handleEndorse(remedy.id)
                           }}
                           disabled={doctorEndorsed}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ml-auto cursor-pointer ${
-                            doctorEndorsed
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ml-auto cursor-pointer ${doctorEndorsed
                               ? "bg-emerald-100 text-emerald-700"
                               : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-                          }`}
+                            }`}
                         >
                           <BadgeCheck className="w-3.5 h-3.5" />
                           {doctorEndorsed ? "Endorsed" : "Endorse"}
@@ -537,11 +555,9 @@ export default function AilmentDetails({ slug }: { slug: string }) {
 
           {/* Add Remedy Button */}
           <div className="mt-8 text-center">
-            <Link href="/share-remedy">
-              <Button size="lg" className="bg-teal-600 hover:bg-teal-700">
-                Share Your Remedy
-              </Button>
-            </Link>
+            <Button asChild size="lg" className="bg-teal-600 hover:bg-teal-700">
+              <Link href="/share-remedy">Share Your Remedy</Link>
+            </Button>
           </div>
         </div>
 
@@ -618,25 +634,39 @@ export default function AilmentDetails({ slug }: { slug: string }) {
 
                   {/* Action Buttons */}
                   <div className="flex flex-wrap items-center gap-4 pb-6 border-b border-border">
-                    <button
-                      onClick={() => toggleLike(selectedRemedy.id)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
-                        likedRemedies.includes(selectedRemedy.id)
-                          ? "bg-red-500 text-white"
-                          : "bg-red-100 text-red-600 hover:bg-red-200"
-                      }`}
-                    >
-                      <Heart className={`w-5 h-5 ${likedRemedies.includes(selectedRemedy.id) ? "fill-current" : ""}`} />
-                      <span>{selectedRemedy.likes + (likedRemedies.includes(selectedRemedy.id) ? 1 : 0)}</span>
-                    </button>
+                    <div className="flex items-center gap-1 px-4 py-2 rounded-lg" style={{ background: "#fffbeb", border: "1px solid #fde68a" }}>
+                      {[1, 2, 3, 4, 5].map((star) => {
+                        const avg = getAverageRating(selectedRemedy, selectedRemedy.id)
+                        const hovered = hoveredStar?.remedyId === selectedRemedy.id ? hoveredStar?.star ?? 0 : 0
+                        const displayRating = hovered || userRatings[selectedRemedy.id] || avg
+                        const filled = star <= Math.round(displayRating)
+                        return (
+                          <button
+                            key={star}
+                            onClick={() => handleRate(selectedRemedy.id, star)}
+                            onMouseEnter={() => setHoveredStar({ remedyId: selectedRemedy.id, star })}
+                            onMouseLeave={() => setHoveredStar(null)}
+                            className="transition-all duration-200 hover:scale-125 cursor-pointer p-0 border-0 bg-transparent"
+                          >
+                            <Star
+                              className={`w-5 h-5 transition-colors duration-200 ${
+                                filled ? "fill-amber-400 text-amber-400" : "text-gray-300"
+                              }`}
+                            />
+                          </button>
+                        )
+                      })}
+                      <span className="text-sm font-semibold text-slate-500 ml-1">
+                        {getAverageRating(selectedRemedy, selectedRemedy.id).toFixed(1)}
+                      </span>
+                    </div>
 
                     <button
                       onClick={() => toggleSaveRemedy(selectedRemedy.id, selectedRemedy.title)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
-                        savedRemedies.includes(selectedRemedy.id)
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${savedRemedies.includes(selectedRemedy.id)
                           ? "bg-teal-100 text-teal-600"
                           : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      }`}
+                        }`}
                     >
                       <Bookmark
                         className={`w-5 h-5 ${savedRemedies.includes(selectedRemedy.id) ? "fill-current" : ""}`}
@@ -669,11 +699,10 @@ export default function AilmentDetails({ slug }: { slug: string }) {
                       <button
                         onClick={() => handleEndorse(selectedRemedy.id)}
                         disabled={hasCurrentDoctorEndorsed(selectedRemedy)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
-                          hasCurrentDoctorEndorsed(selectedRemedy)
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${hasCurrentDoctorEndorsed(selectedRemedy)
                             ? "bg-emerald-100 text-emerald-700 cursor-default"
                             : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200"
-                        }`}
+                          }`}
                       >
                         {hasCurrentDoctorEndorsed(selectedRemedy) ? (
                           <>
@@ -732,11 +761,9 @@ export default function AilmentDetails({ slug }: { slug: string }) {
             <p className="font-semibold mb-2">Please log in first</p>
             <p className="text-sm mb-3">You need to be logged in to perform this action.</p>
             <div className="flex gap-2">
-              <Link href="/login">
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-                  Login
-                </Button>
-              </Link>
+              <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Link href="/login">Login</Link>
+              </Button>
               <Button size="sm" variant="outline" onClick={() => setShowLoginPrompt(false)} className="bg-transparent">
                 Dismiss
               </Button>
