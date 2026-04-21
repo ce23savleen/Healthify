@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,9 @@ import {
   Calendar, Mail, Phone, MapPin, Hash, ExternalLink, ChevronRight,
   ArrowUpRight, ArrowDownRight, Flame, Zap, Star,
 } from "lucide-react"
+import mockAilmentsData from "@/data/mockAilmentsData"
+import { mergeAndSortByName, slugifyAilmentName } from "@/lib/ailment-utils"
+import type { AilmentApiResponse, AilmentRecord, CreateAilmentRequest } from "@/types/ailment"
 
 // ─── Types ───
 type TabId = "dashboard" | "kyc" | "users" | "content" | "tickets" | "master"
@@ -20,6 +23,7 @@ interface SidebarItem { id: TabId; label: string; icon: React.ReactNode; badge?:
 interface Ticket { id: number; subject: string; user: string; status: "Open" | "In Progress" | "Resolved"; date: string; priority: "Low" | "Medium" | "High" }
 type UserStatus = "Active" | "Inactive" | "Banned"
 type AppUser = { id: number; name: string; email: string; type: "User" | "Doctor"; status: UserStatus; joined: string; avatar?: string }
+interface MasterAilment extends AilmentRecord { source: "static" | "dynamic" }
 
 // ─── Mock Data ───
 const initialPendingDoctors = [
@@ -54,7 +58,20 @@ const initialTickets: Ticket[] = [
   { id: 4, subject: "Payment issue for consultation", user: "priyanka@mail.com", status: "Resolved", date: "Mar 25, 2026", priority: "High" },
 ]
 
-const initialAilments = ["Acne","Acid Reflux","Anxiety","Back Pain","Cold and Flu","Diabetes","Headache","Insomnia","Joint Pain","Migraine","Nausea","Sore Throat","Skin Irritation"]
+const initialAilments: MasterAilment[] = Object.values(mockAilmentsData)
+  .map((ailment) => ({
+    id: `static-${ailment.slug}`,
+    slug: ailment.slug,
+    name: ailment.name,
+    description: ailment.description,
+    causes: ailment.causes,
+    symptoms: ailment.symptoms,
+    prevention: ailment.prevention,
+    createdAt: new Date(0).toISOString(),
+    updatedAt: new Date(0).toISOString(),
+    source: "static" as const,
+  }))
+  .sort((a, b) => a.name.localeCompare(b.name))
 
 // ─── Sidebar Tabs ───
 const makeSidebarItems = (pCount: number, tCount: number): SidebarItem[] => [
@@ -74,7 +91,36 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState(initialUsers)
   const [content, setContent] = useState(initialContent)
   const [tickets, setTickets] = useState(initialTickets)
-  const [ailments, setAilments] = useState(initialAilments)
+  const [ailments, setAilments] = useState<MasterAilment[]>(initialAilments)
+
+  const mergeWithStaticAilments = (dynamicAilments: AilmentRecord[]): MasterAilment[] => {
+    const typedDynamicAilments: MasterAilment[] = dynamicAilments.map((ailment) => ({
+      ...ailment,
+      source: "dynamic",
+    }))
+
+    return mergeAndSortByName(initialAilments, typedDynamicAilments)
+  }
+
+  const refreshAilments = async () => {
+    try {
+      const response = await fetch("/api/ailments", { cache: "no-store" })
+      if (!response.ok) {
+        setAilments(initialAilments)
+        return
+      }
+
+      const data = (await response.json()) as AilmentApiResponse
+      setAilments(mergeWithStaticAilments(data.ailments))
+    } catch (error) {
+      console.error("Failed to fetch ailments", error)
+      setAilments(initialAilments)
+    }
+  }
+
+  useEffect(() => {
+    void refreshAilments()
+  }, [])
 
   const openTicketCount = tickets.filter(t => t.status !== "Resolved").length
   const sidebarItems = makeSidebarItems(pendingDoctors.length, openTicketCount)
@@ -87,7 +133,7 @@ export default function AdminDashboard() {
       {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />}
 
       {/* ═══ SIDEBAR ═══ */}
-      <aside className={`fixed lg:sticky top-0 left-0 z-40 h-screen w-[260px] flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+      <aside className={`fixed lg:sticky top-0 left-0 z-40 h-screen w-65 flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
         style={{ background: "linear-gradient(180deg, #064e3b 0%, #022c22 100%)" }}>
         
         {/* Logo */}
@@ -167,7 +213,7 @@ export default function AdminDashboard() {
           {activeTab === "users" && <UserManagement users={users} setUsers={setUsers} />}
           {activeTab === "content" && <ContentModeration content={content} setContent={setContent} />}
           {activeTab === "tickets" && <SupportTickets tickets={tickets} setTickets={setTickets} />}
-          {activeTab === "master" && <MasterData ailments={ailments} setAilments={setAilments} />}
+          {activeTab === "master" && <MasterData ailments={ailments} setAilments={setAilments} refreshAilments={refreshAilments} />}
         </main>
       </div>
     </div>
@@ -357,7 +403,7 @@ function DoctorKYC({ doctors, setDoctors }: { doctors: typeof initialPendingDoct
               {/* Left — Document Preview (2 cols) */}
               <div className="md:col-span-2 p-6 flex flex-col" style={{ background: "#f8fdf9", borderRight: "1px solid #e5e7eb" }}>
                 <h4 className="text-sm font-bold uppercase tracking-wider mb-4" style={{ color: "#6b7280" }}>Uploaded Certificate</h4>
-                <div className="flex-1 flex flex-col items-center justify-center rounded-xl p-8 min-h-[240px]" style={{ border: "2px dashed #d1fae5", background: "white" }}>
+                <div className="flex-1 flex flex-col items-center justify-center rounded-xl p-8 min-h-60" style={{ border: "2px dashed #d1fae5", background: "white" }}>
                   <FileText className="w-16 h-16 mb-3" style={{ color: "#10b981", opacity: 0.4 }} />
                   <p className="text-sm font-semibold text-center" style={{ color: "#064e3b" }}>{reviewDoctor.doc}</p>
                   <p className="text-xs text-center mt-1" style={{ color: "#9ca3af" }}>Certificate / Degree Document</p>
@@ -620,22 +666,253 @@ function SupportTickets({ tickets, setTickets }: { tickets: Ticket[]; setTickets
 }
 
 // ═══════════ 6 · MASTER DATA ═══════════
-function MasterData({ ailments, setAilments }: { ailments: string[]; setAilments: React.Dispatch<React.SetStateAction<string[]>> }) {
-  const [newAilment, setNewAilment] = useState("")
+type AilmentListField = "causes" | "symptoms" | "prevention"
+
+function MasterData({ ailments, setAilments, refreshAilments }: {
+  ailments: MasterAilment[]
+  setAilments: React.Dispatch<React.SetStateAction<MasterAilment[]>>
+  refreshAilments: () => Promise<void>
+}) {
   const [searchTerm, setSearchTerm] = useState("")
-  const addAilment = () => { const t = newAilment.trim(); if (!t || ailments.some(a => a.toLowerCase() === t.toLowerCase())) return; setAilments(prev => [...prev, t].sort()); setNewAilment("") }
-  const filtered = ailments.filter(a => a.toLowerCase().includes(searchTerm.toLowerCase()))
+  const [formData, setFormData] = useState<CreateAilmentRequest>({
+    name: "",
+    description: "",
+    causes: [],
+    symptoms: [],
+    prevention: [],
+  })
+  const [causeInput, setCauseInput] = useState("")
+  const [symptomInput, setSymptomInput] = useState("")
+  const [preventionInput, setPreventionInput] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null)
+
+  const filtered = ailments.filter((ailment) =>
+    ailment.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const addListValue = (field: AilmentListField, value: string, clearField: () => void) => {
+    const trimmedValue = value.trim()
+    if (!trimmedValue) {
+      return
+    }
+
+    setFormData((previous) => {
+      if (previous[field].includes(trimmedValue)) {
+        return previous
+      }
+
+      return {
+        ...previous,
+        [field]: [...previous[field], trimmedValue],
+      }
+    })
+
+    clearField()
+  }
+
+  const removeListValue = (field: AilmentListField, index: number) => {
+    setFormData((previous) => ({
+      ...previous,
+      [field]: previous[field].filter((_, itemIndex) => itemIndex !== index),
+    }))
+  }
+
+  const handleSubmit = async () => {
+    setSubmitError(null)
+    setSubmitSuccess(null)
+
+    const name = formData.name.trim()
+    const description = formData.description.trim()
+
+    if (!name || !description) {
+      setSubmitError("Name and description are required")
+      return
+    }
+
+    if (formData.causes.length === 0 || formData.symptoms.length === 0 || formData.prevention.length === 0) {
+      setSubmitError("Please add at least one cause, symptom, and prevention item")
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch("/api/ailments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          description,
+          causes: formData.causes,
+          symptoms: formData.symptoms,
+          prevention: formData.prevention,
+        } satisfies CreateAilmentRequest),
+      })
+
+      const data = (await response.json()) as { ailment?: AilmentRecord; error?: string }
+
+      if (!response.ok || !data.ailment) {
+        throw new Error(data.error || "Unable to add ailment")
+      }
+
+      const createdAilment: MasterAilment = {
+        ...data.ailment,
+        source: "dynamic",
+      }
+
+      setAilments((previousAilments) => mergeAndSortByName(previousAilments, [createdAilment]))
+      setFormData({
+        name: "",
+        description: "",
+        causes: [],
+        symptoms: [],
+        prevention: [],
+      })
+      setCauseInput("")
+      setSymptomInput("")
+      setPreventionInput("")
+      setSubmitSuccess("Ailment saved successfully")
+
+      await refreshAilments()
+    } catch (error) {
+      console.error("Failed to save ailment", error)
+      setSubmitError(error instanceof Error ? error.message : "Unable to add ailment")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const removeAilmentFromView = (slug: string) => {
+    setAilments((previous) => previous.filter((ailment) => ailment.slug !== slug))
+  }
 
   return (
     <div className="grid lg:grid-cols-3 gap-6">
       <div className="lg:col-span-1 rounded-2xl p-6" style={{ background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
         <h3 className="text-lg font-bold mb-4" style={{ color: "#064e3b" }}>Add New Ailment</h3>
         <div className="space-y-4">
-          <input type="text" value={newAilment} onChange={e => setNewAilment(e.target.value)} onKeyDown={e => e.key === "Enter" && addAilment()}
-            placeholder="e.g., Bronchitis" className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition" style={{ border: "1px solid #d1fae5", color: "#374151", background: "#f8fdf9" }} />
-          <button onClick={addAilment} disabled={!newAilment.trim()} className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition cursor-pointer disabled:opacity-50"
-            style={{ background: "linear-gradient(135deg, #059669, #047857)" }}><Plus className="w-4 h-4 inline mr-1" /> Add Ailment</button>
-          <p className="text-xs" style={{ color: "#9ca3af" }}>Total: <span className="font-bold" style={{ color: "#064e3b" }}>{ailments.length}</span> ailments</p>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(event) => setFormData((previous) => ({ ...previous, name: event.target.value }))}
+            placeholder="Ailment name"
+            className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition"
+            style={{ border: "1px solid #d1fae5", color: "#374151", background: "#f8fdf9" }}
+          />
+
+          <textarea
+            value={formData.description}
+            onChange={(event) => setFormData((previous) => ({ ...previous, description: event.target.value }))}
+            placeholder="Short description"
+            rows={3}
+            className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition resize-none"
+            style={{ border: "1px solid #d1fae5", color: "#374151", background: "#f8fdf9" }}
+          />
+
+          <div className="space-y-2">
+            <p className="text-sm font-semibold" style={{ color: "#064e3b" }}>Causes</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={causeInput}
+                onChange={(event) => setCauseInput(event.target.value)}
+                onKeyDown={(event) => event.key === "Enter" && (event.preventDefault(), addListValue("causes", causeInput, () => setCauseInput("")))}
+                placeholder="Add cause"
+                className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
+                style={{ border: "1px solid #d1fae5", color: "#374151" }}
+              />
+              <Button type="button" onClick={() => addListValue("causes", causeInput, () => setCauseInput(""))} variant="outline" size="sm">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {formData.causes.map((item, index) => (
+                <span key={`cause-${index}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs" style={{ background: "#ecfdf5", color: "#047857" }}>
+                  {item}
+                  <button type="button" onClick={() => removeListValue("causes", index)} className="cursor-pointer">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-semibold" style={{ color: "#064e3b" }}>Symptoms</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={symptomInput}
+                onChange={(event) => setSymptomInput(event.target.value)}
+                onKeyDown={(event) => event.key === "Enter" && (event.preventDefault(), addListValue("symptoms", symptomInput, () => setSymptomInput("")))}
+                placeholder="Add symptom"
+                className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
+                style={{ border: "1px solid #d1fae5", color: "#374151" }}
+              />
+              <Button type="button" onClick={() => addListValue("symptoms", symptomInput, () => setSymptomInput(""))} variant="outline" size="sm">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {formData.symptoms.map((item, index) => (
+                <span key={`symptom-${index}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs" style={{ background: "#eff6ff", color: "#1d4ed8" }}>
+                  {item}
+                  <button type="button" onClick={() => removeListValue("symptoms", index)} className="cursor-pointer">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-semibold" style={{ color: "#064e3b" }}>Prevention</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={preventionInput}
+                onChange={(event) => setPreventionInput(event.target.value)}
+                onKeyDown={(event) => event.key === "Enter" && (event.preventDefault(), addListValue("prevention", preventionInput, () => setPreventionInput("")))}
+                placeholder="Add prevention tip"
+                className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
+                style={{ border: "1px solid #d1fae5", color: "#374151" }}
+              />
+              <Button type="button" onClick={() => addListValue("prevention", preventionInput, () => setPreventionInput(""))} variant="outline" size="sm">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {formData.prevention.map((item, index) => (
+                <span key={`prevention-${index}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs" style={{ background: "#fef3c7", color: "#92400e" }}>
+                  {item}
+                  <button type="button" onClick={() => removeListValue("prevention", index)} className="cursor-pointer">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={() => void handleSubmit()}
+            disabled={isSubmitting}
+            className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition cursor-pointer disabled:opacity-50"
+            style={{ background: "linear-gradient(135deg, #059669, #047857)" }}
+          >
+            <Plus className="w-4 h-4 inline mr-1" />
+            {isSubmitting ? "Saving..." : "Save Ailment"}
+          </button>
+
+          {submitError && <p className="text-xs text-red-600">{submitError}</p>}
+          {submitSuccess && <p className="text-xs text-emerald-700">{submitSuccess}</p>}
+
+          <p className="text-xs" style={{ color: "#9ca3af" }}>
+            Total: <span className="font-bold" style={{ color: "#064e3b" }}>{ailments.length}</span> ailments
+          </p>
         </div>
       </div>
       <div className="lg:col-span-2 rounded-2xl p-6" style={{ background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
@@ -648,14 +925,47 @@ function MasterData({ ailments, setAilments }: { ailments: string[]; setAilments
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {filtered.map(ailment => (
-            <span key={ailment} className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition cursor-default"
-              style={{ background: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0" }}>
-              {ailment}
-              <button onClick={() => setAilments(prev => prev.filter(a => a !== ailment))} className="opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" style={{ color: "#ef4444" }}>
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </span>
+          {filtered.map((ailment) => (
+            <div
+              key={ailment.slug}
+              className="w-full p-3 rounded-xl"
+              style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold" style={{ color: "#064e3b" }}>{ailment.name}</p>
+                    <span className="text-[10px] uppercase px-2 py-0.5 rounded-full" style={{ background: ailment.source === "dynamic" ? "#dcfce7" : "#e0f2fe", color: ailment.source === "dynamic" ? "#166534" : "#075985" }}>
+                      {ailment.source}
+                    </span>
+                  </div>
+                  <p className="text-xs mt-1" style={{ color: "#6b7280" }}>{ailment.description}</p>
+                  <p className="text-[11px] mt-1" style={{ color: "#9ca3af" }}>
+                    Slug: {slugifyAilmentName(ailment.name)}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: "#ecfdf5", color: "#047857" }}>
+                      Causes: {ailment.causes.length}
+                    </span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: "#eff6ff", color: "#1d4ed8" }}>
+                      Symptoms: {ailment.symptoms.length}
+                    </span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: "#fef3c7", color: "#92400e" }}>
+                      Prevention: {ailment.prevention.length}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => removeAilmentFromView(ailment.slug)}
+                  className="cursor-pointer"
+                  style={{ color: "#ef4444" }}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           ))}
           {filtered.length === 0 && <p className="text-sm py-4" style={{ color: "#9ca3af" }}>No ailments match your filter.</p>}
         </div>

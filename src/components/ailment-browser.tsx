@@ -5,8 +5,23 @@ import Link from "next/link"
 import { Search, X, ArrowRight, Sparkles, Filter } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
+interface AilmentCard {
+  name: string
+  description: string
+  icon: string
+  image: string
+  remedyCount: number
+}
+
+interface AilmentBrowserProps {
+  dynamicAilments?: Array<{
+    name: string
+    description: string
+  }>
+}
+
 // Ailments data with descriptions, icons, and image URLs
-const ailmentsData: Record<string, Array<{ name: string; description: string; icon: string; image: string; remedyCount: number }>> = {
+const ailmentsData: Record<string, AilmentCard[]> = {
   A: [
     { name: "Acne", description: "Skin condition with pimples, blackheads, and whiteheads on face and body", icon: "🧴", image: "https://images.unsplash.com/photo-1616394584738-fc6e612e71b8?w=400&h=300&fit=crop", remedyCount: 12 },
     { name: "Allergies", description: "Immune system reactions to substances like pollen, dust, or certain foods", icon: "🤧", image: "https://images.unsplash.com/photo-1584362917165-526a968579e8?w=400&h=300&fit=crop", remedyCount: 9 },
@@ -122,7 +137,7 @@ const ailmentsData: Record<string, Array<{ name: string; description: string; ic
   ],
 }
 
-export default function AilmentBrowser() {
+export default function AilmentBrowser({ dynamicAilments = [] }: AilmentBrowserProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const selectedLetter = searchParams.get("letter")?.toUpperCase() || null
@@ -143,9 +158,60 @@ export default function AilmentBrowser() {
 
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")
 
+  const staticAilments = useMemo(() => Object.values(ailmentsData).flat(), [])
+
   const allAilments = useMemo(() => {
-    return Object.values(ailmentsData).flat()
-  }, [])
+    const fallbackDescription = "Explore trusted community remedies and prevention guidance for this ailment."
+    const fallbackImage = "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=300&fit=crop"
+    const mergedAilments = new Map<string, AilmentCard>()
+
+    for (const ailment of staticAilments) {
+      mergedAilments.set(ailment.name.toLowerCase(), ailment)
+    }
+
+    for (const ailment of dynamicAilments) {
+      const key = ailment.name.trim().toLowerCase()
+      if (!key) {
+        continue
+      }
+
+      const existing = mergedAilments.get(key)
+      if (existing) {
+        mergedAilments.set(key, {
+          ...existing,
+          description: ailment.description?.trim() || existing.description,
+        })
+      } else {
+        mergedAilments.set(key, {
+          name: ailment.name.trim(),
+          description: ailment.description?.trim() || fallbackDescription,
+          icon: "🌿",
+          image: fallbackImage,
+          remedyCount: 0,
+        })
+      }
+    }
+
+    return Array.from(mergedAilments.values()).sort((a, b) => a.name.localeCompare(b.name))
+  }, [dynamicAilments, staticAilments])
+
+  const ailmentsByLetter = useMemo(() => {
+    const grouped: Record<string, AilmentCard[]> = {}
+
+    for (const letter of alphabet) {
+      grouped[letter] = []
+    }
+
+    for (const ailment of allAilments) {
+      const letter = ailment.name.charAt(0).toUpperCase()
+      if (!grouped[letter]) {
+        grouped[letter] = []
+      }
+      grouped[letter].push(ailment)
+    }
+
+    return grouped
+  }, [allAilments, alphabet])
 
   const suggestions = useMemo(() => {
     if (!searchTerm.trim()) return []
@@ -159,7 +225,7 @@ export default function AilmentBrowser() {
       return allAilments.filter((a) => a.name.toLowerCase().includes(searchTerm.toLowerCase()))
     }
     if (selectedLetter) {
-      return ailmentsData[selectedLetter] || []
+      return ailmentsByLetter[selectedLetter] || []
     }
     // Show all ailments by default
     return allAilments
@@ -174,7 +240,7 @@ export default function AilmentBrowser() {
     if (value.trim()) setSelectedLetter(null)
   }
 
-  const handleSuggestionClick = (ailment: typeof allAilments[0]) => {
+  const handleSuggestionClick = (ailment: AilmentCard) => {
     setSearchTerm(ailment.name)
     setShowSuggestions(false)
   }
@@ -191,11 +257,11 @@ export default function AilmentBrowser() {
   const totalAilments = allAilments.length
   const letterCounts = useMemo(() => {
     const counts: Record<string, number> = {}
-    Object.entries(ailmentsData).forEach(([letter, items]) => {
+    Object.entries(ailmentsByLetter).forEach(([letter, items]) => {
       counts[letter] = items.length
     })
     return counts
-  }, [])
+  }, [ailmentsByLetter])
 
   return (
     <section className="relative overflow-hidden" style={{ background: "#f0fdf4" }}>
@@ -422,7 +488,7 @@ export default function AilmentBrowser() {
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/50 via-black/10 to-transparent" />
 
                     {/* Icon Badge */}
                     <div

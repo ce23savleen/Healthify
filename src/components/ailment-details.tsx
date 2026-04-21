@@ -6,11 +6,16 @@ import { Button } from "@/components/ui/button"
 import { MessageCircle, Share2, Bookmark, AlertCircle, X, ShieldCheck, BadgeCheck, Star, Clock, Users, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
-import mockAilmentsData, { type MockAilment, type MockRemedy } from "@/data/mockAilmentsData"
+import mockAilmentsData, { type MockAilment } from "@/data/mockAilmentsData"
 import ailmentDetailsData from "@/data/ailment-details"
 import remediesData from "@/data/remedies"
 
-export default function AilmentDetails({ slug }: { slug: string }) {
+interface AilmentDetailsProps {
+  slug: string
+  fallbackAilment?: MockAilment | null
+}
+
+export default function AilmentDetails({ slug, fallbackAilment = null }: AilmentDetailsProps) {
   const { isLoggedIn, user } = useAuth()
   const [userRatings, setUserRatings] = useState<Record<number, number>>({})
   const [hoveredStar, setHoveredStar] = useState<{ remedyId: number; star: number } | null>(null)
@@ -29,7 +34,7 @@ export default function AilmentDetails({ slug }: { slug: string }) {
   const currentDoctorId = user?.id || ""
 
   // Try mock data first, then fall back to legacy data
-  const mockAilment = mockAilmentsData[ailmentKey]
+  const mockAilment = mockAilmentsData[ailmentKey] || fallbackAilment
   const legacyAilment = ailmentDetailsData[ailmentKey]
 
   // Build ailment info from whichever source is available

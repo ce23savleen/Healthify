@@ -1,8 +1,16 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Leaf,
   LogOut,
@@ -35,12 +43,34 @@ import {
   TrendingUp,
   AlertCircle,
   ThumbsUp,
-  ThumbsDown,
   Eye,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import DoctorRouteGuard from "@/components/doctor-route-guard"
+import type {
+  EndorseRemedyRequest,
+  RemedyApiError,
+  RemedyRecord,
+  RemediesApiResponse,
+} from "@/types/remedy"
+
+interface DoctorBlog {
+  id: number | string
+  author: string
+  title: string
+  topic: string
+  content: string
+  date: string
+  likes: number
+}
+
+interface SavedRemedy {
+  id?: number | string
+  title: string
+  ailment: string
+  date: string
+}
 
 export default function DoctorDashboard() {
   const { user, logout } = useAuth()
@@ -58,10 +88,22 @@ export default function DoctorDashboard() {
     experience: "10 years",
     clinic: "Wellness Clinic, New York",
   })
-  const [pendingVerifications, setPendingVerifications] = useState<any[]>([])
-  const [blogs, setBlogs] = useState<any[]>([])
-  const [savedRemedies, setSavedRemedies] = useState<any[]>([])
+  const [pendingVerifications, setPendingVerifications] = useState<RemedyRecord[]>([])
+  const [blogs, setBlogs] = useState<DoctorBlog[]>([])
+  const [savedRemedies, setSavedRemedies] = useState<SavedRemedy[]>([])
   const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [selectedRemedy, setSelectedRemedy] = useState<RemedyRecord | null>(null)
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false)
+  const [isSubmittingEndorsement, setIsSubmittingEndorsement] = useState(false)
+
+  const currentDoctorId = user?.id || ""
+  const pendingForCurrentDoctor = useMemo(
+    () =>
+      pendingVerifications.filter(
+        (remedy) => !remedy.endorsedBy.includes(currentDoctorId)
+      ),
+    [currentDoctorId, pendingVerifications]
+  )
 
   useEffect(() => {
     const savedImage = localStorage.getItem("doctorProfileImage")
@@ -90,37 +132,81 @@ export default function DoctorDashboard() {
   }
 
   useEffect(() => {
-    const pending = JSON.parse(localStorage.getItem("pendingVerifications") || "[]")
-    setPendingVerifications(pending)
+    const fetchPendingVerifications = async () => {
+      try {
+        const response = await fetch("/api/remedies?verificationRequested=true", {
+          cache: "no-store",
+        })
 
-    const allBlogs = JSON.parse(localStorage.getItem("doctorBlogs") || "[]")
-    const userBlogs = allBlogs.filter((blog: any) => blog.author === user?.name)
+        if (!response.ok) {
+          throw new Error("Unable to fetch pending verifications")
+        }
+
+        const data = (await response.json()) as RemediesApiResponse
+        setPendingVerifications(data.remedies)
+      } catch (error) {
+        console.error("Failed to fetch pending verifications", error)
+        setPendingVerifications([])
+      }
+    }
+
+    const allBlogs = JSON.parse(localStorage.getItem("doctorBlogs") || "[]") as DoctorBlog[]
+    const userBlogs = allBlogs.filter((blog) => blog.author === user?.name)
     setBlogs(userBlogs)
 
-    const saved = JSON.parse(localStorage.getItem("savedRemedies") || "[]")
+    const saved = JSON.parse(localStorage.getItem("savedRemedies") || "[]") as SavedRemedy[]
     setSavedRemedies(saved)
+
+    void fetchPendingVerifications()
   }, [user?.name])
 
-  const handleVerifyRemedy = (remedyId: number) => {
-    const remedy = pendingVerifications.find((r) => r.id === remedyId)
-    if (remedy) {
-      remedy.isVerified = true
-      const updated = pendingVerifications.filter((r) => r.id !== remedyId)
-      setPendingVerifications(updated)
-      localStorage.setItem("pendingVerifications", JSON.stringify(updated))
+  const handleVerifyRemedy = async (remedyId: string) => {
+    if (!currentDoctorId) {
+      return
+    }
 
-      const approvedRemedies = JSON.parse(localStorage.getItem("approvedRemedies") || "[]")
-      approvedRemedies.push(remedy)
-      localStorage.setItem("approvedRemedies", JSON.stringify(approvedRemedies))
+    setIsSubmittingEndorsement(true)
 
-      alert("Remedy verified successfully!")
+    try {
+      const payload: EndorseRemedyRequest = {
+        doctorId: currentDoctorId,
+      }
+
+      const response = await fetch(`/api/remedies/${remedyId}/endorse`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok && response.status !== 409) {
+        const apiError = (await response.json().catch(() => null)) as RemedyApiError | null
+        throw new Error(apiError?.error || "Unable to endorse this remedy")
+      }
+
+      const data = (await response.json()) as { remedy?: RemedyRecord }
+      if (!data.remedy) {
+        throw new Error("Unexpected response while endorsing")
+      }
+
+      setPendingVerifications((previous) =>
+        previous.map((remedy) => (remedy.id === remedyId ? data.remedy as RemedyRecord : remedy))
+      )
+      setSelectedRemedy(data.remedy)
+      setIsReviewDialogOpen(false)
+      alert("Remedy endorsed successfully")
+    } catch (error) {
+      console.error("Failed to endorse remedy", error)
+      alert(error instanceof Error ? error.message : "Unable to endorse this remedy")
+    } finally {
+      setIsSubmittingEndorsement(false)
     }
   }
 
-  const handleRejectRemedy = (remedyId: number) => {
-    const updated = pendingVerifications.filter((r) => r.id !== remedyId)
-    setPendingVerifications(updated)
-    localStorage.setItem("pendingVerifications", JSON.stringify(updated))
+  const openReviewDialog = (remedy: RemedyRecord) => {
+    setSelectedRemedy(remedy)
+    setIsReviewDialogOpen(true)
   }
 
   const upcomingAppointments = [
@@ -194,7 +280,7 @@ export default function DoctorDashboard() {
     { key: "profile" as const, label: "Personal Information", icon: User },
     { key: "appointments" as const, label: "Upcoming Appointments", icon: Calendar, badge: upcomingAppointments.length },
     { key: "patients" as const, label: "Patients Consulted", icon: Users },
-    { key: "pending" as const, label: "Verifications", icon: Clock, badge: pendingVerifications.length > 0 ? pendingVerifications.length : undefined },
+    { key: "pending" as const, label: "Verifications", icon: Clock, badge: pendingForCurrentDoctor.length > 0 ? pendingForCurrentDoctor.length : undefined },
     { key: "approved" as const, label: "Your Remedies", icon: CheckCircle },
     { key: "blogs" as const, label: "Your Blogs", icon: BookOpen },
     { key: "saved" as const, label: "Saved Remedies", icon: Bookmark },
@@ -864,14 +950,14 @@ export default function DoctorDashboard() {
                       <div>
                         <h2 className="text-xl font-bold text-foreground tracking-tight">Remedy Verifications</h2>
                         <p className="text-sm text-muted-foreground mt-0.5">
-                          {pendingVerifications.length} pending for your review
+                          {pendingForCurrentDoctor.length} pending for your review
                         </p>
                       </div>
                     </div>
                   </div>
 
                   <div className="p-8">
-                    {pendingVerifications.length === 0 ? (
+                    {pendingForCurrentDoctor.length === 0 ? (
                       <div className="text-center py-16">
                         <div
                           className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
@@ -884,7 +970,7 @@ export default function DoctorDashboard() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {pendingVerifications.map((remedy) => (
+                        {pendingForCurrentDoctor.map((remedy) => (
                           <div
                             key={remedy.id}
                             className="group p-5 rounded-2xl border border-transparent transition-all duration-300 hover:shadow-lg overflow-hidden"
@@ -903,31 +989,84 @@ export default function DoctorDashboard() {
                               <div className="flex-1">
                                 <h3 className="font-bold text-foreground mb-1">{remedy.title}</h3>
                                 <p className="text-sm text-muted-foreground mb-1">{remedy.ailment}</p>
-                                <p className="text-sm text-foreground mb-4 leading-relaxed">{remedy.description}</p>
-                                <div className="flex gap-3">
-                                  <Button
-                                    onClick={() => handleVerifyRemedy(remedy.id)}
-                                    className="gap-2 rounded-xl shadow-md text-sm"
-                                    style={{ background: "linear-gradient(135deg, #059669, #10b981)" }}
-                                  >
-                                    <ThumbsUp className="w-4 h-4" />
-                                    Verify
-                                  </Button>
-                                  <Button
-                                    onClick={() => handleRejectRemedy(remedy.id)}
-                                    variant="outline"
-                                    className="gap-2 rounded-xl text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200"
-                                  >
-                                    <ThumbsDown className="w-4 h-4" />
-                                    Reject
-                                  </Button>
-                                </div>
+                                <p
+                                  className="text-sm text-foreground mb-4 leading-relaxed"
+                                  style={{
+                                    display: "-webkit-box",
+                                    WebkitLineClamp: 3,
+                                    WebkitBoxOrient: "vertical",
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  {remedy.description}
+                                </p>
+                                <Button
+                                  onClick={() => openReviewDialog(remedy)}
+                                  className="gap-2 rounded-xl shadow-md text-sm"
+                                  style={{ background: "linear-gradient(135deg, #059669, #10b981)" }}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  Review Full Submission
+                                </Button>
                               </div>
                             </div>
                           </div>
                         ))}
                       </div>
                     )}
+
+                    <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
+                      <DialogContent className="sm:max-w-2xl">
+                        {selectedRemedy && (
+                          <>
+                            <DialogHeader>
+                              <DialogTitle>{selectedRemedy.title}</DialogTitle>
+                              <DialogDescription>
+                                {selectedRemedy.ailment} by {selectedRemedy.authorName}
+                              </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                              <div>
+                                <h4 className="font-semibold mb-1">Full Description</h4>
+                                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                                  {selectedRemedy.description}
+                                </p>
+                              </div>
+
+                              {selectedRemedy.steps.length > 0 && (
+                                <div>
+                                  <h4 className="font-semibold mb-1">Steps</h4>
+                                  <ol className="list-decimal pl-5 space-y-1">
+                                    {selectedRemedy.steps.map((step, index) => (
+                                      <li key={`${selectedRemedy.id}-step-${index}`} className="text-sm text-foreground">
+                                        {step}
+                                      </li>
+                                    ))}
+                                  </ol>
+                                </div>
+                              )}
+
+                              <p className="text-sm text-muted-foreground">
+                                Current endorsements: <span className="font-semibold text-foreground">{selectedRemedy.endorsements}</span>
+                              </p>
+                            </div>
+
+                            <DialogFooter>
+                              <Button
+                                onClick={() => void handleVerifyRemedy(selectedRemedy.id)}
+                                disabled={isSubmittingEndorsement}
+                                className="gap-2 rounded-xl text-sm"
+                                style={{ background: "linear-gradient(135deg, #059669, #10b981)" }}
+                              >
+                                <ThumbsUp className="w-4 h-4" />
+                                {isSubmittingEndorsement ? "Endorsing..." : "Endorse Remedy"}
+                              </Button>
+                            </DialogFooter>
+                          </>
+                        )}
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </div>
               </div>
@@ -1086,7 +1225,7 @@ export default function DoctorDashboard() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {blogs.slice(0, 3).map((blog: any) => (
+                        {blogs.slice(0, 3).map((blog) => (
                           <div
                             key={blog.id}
                             className="group p-5 rounded-2xl border border-transparent transition-all duration-300 hover:shadow-lg overflow-hidden"
@@ -1187,9 +1326,9 @@ export default function DoctorDashboard() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {savedRemedies.map((remedy: any, idx: number) => (
+                        {savedRemedies.map((remedy, idx) => (
                           <div
-                            key={idx}
+                            key={`${remedy.id ?? remedy.title}-${idx}`}
                             className="group p-5 rounded-2xl border border-transparent transition-all duration-300 hover:shadow-lg overflow-hidden"
                             style={{
                               background: "linear-gradient(145deg, #fffbeb, #ffffff)",

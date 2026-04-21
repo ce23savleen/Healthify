@@ -8,30 +8,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { X, Plus, Upload } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
+import mockAilmentsData from "@/data/mockAilmentsData"
+import type { CreateRemedyRequest, RemedyApiError } from "@/types/remedy"
 
-// Get all available ailments from the ailment data
-const ailmentsList = [
-  "Acne",
-  "Back Pain",
-  "Headache",
-  "Nausea",
-  "Sore Throat",
-  "Joint Pain",
-  "Skin Irritation",
-  "Indigestion",
-  "Fever",
-  "Cough",
-  "Cold",
-  "Insomnia",
-  "Anxiety",
-  "Digestion Issues",
-]
+interface ShareRemedyFormState {
+  ailment: string
+  title: string
+  description: string
+  steps: string[]
+  requestDoctorVerification: boolean
+}
+
+const ailmentsList = Array.from(new Set(Object.values(mockAilmentsData).map((ailment) => ailment.name))).sort((a, b) =>
+  a.localeCompare(b)
+)
 
 export default function ShareRemedyForm() {
   const router = useRouter()
   const { isLoggedIn, user } = useAuth()
   const [previousPage, setPreviousPage] = useState<string>("/")
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ShareRemedyFormState>({
     ailment: "",
     title: "",
     description: "",
@@ -155,34 +151,27 @@ export default function ShareRemedyForm() {
     setIsSubmitting(true)
 
     try {
-      const newRemedy = {
-        id: Date.now(),
-        title: formData.title,
-        author: user?.name || "Anonymous",
-        avatar: "/user-avatar.jpg",
+      const payload: CreateRemedyRequest = {
         ailment: formData.ailment,
+        title: formData.title,
         description: formData.description,
         steps: formData.steps.filter((step) => step.trim()),
-        likes: 0,
-        comments: 0,
-        isVerified: false,
-        isNew: true,
-        timestamp: "Just now",
-        userSubmitted: true,
         requestDoctorVerification: formData.requestDoctorVerification,
+        authorId: user?.id,
+        authorName: user?.name || "Anonymous",
       }
 
-      // Get existing remedies from localStorage
-      const existingRemedies = JSON.parse(localStorage.getItem("userSubmittedRemedies") || "[]")
+      const response = await fetch("/api/remedies", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
 
-      // Add new remedy
-      const updatedRemedies = [newRemedy, ...existingRemedies]
-      localStorage.setItem("userSubmittedRemedies", JSON.stringify(updatedRemedies))
-
-      if (formData.requestDoctorVerification) {
-        const pendingVerifications = JSON.parse(localStorage.getItem("pendingVerifications") || "[]")
-        pendingVerifications.push(newRemedy)
-        localStorage.setItem("pendingVerifications", JSON.stringify(pendingVerifications))
+      if (!response.ok) {
+        const apiError = (await response.json().catch(() => null)) as RemedyApiError | null
+        throw new Error(apiError?.error || "Unable to submit remedy")
       }
 
       const notification = document.createElement("div")
@@ -210,7 +199,8 @@ export default function ShareRemedyForm() {
       setUploadedFiles([])
     } catch (error) {
       console.error("Error submitting remedy:", error)
-      alert("Error submitting remedy. Please try again.")
+      const message = error instanceof Error ? error.message : "Error submitting remedy. Please try again."
+      alert(message)
     } finally {
       setIsSubmitting(false)
     }
@@ -313,7 +303,7 @@ export default function ShareRemedyForm() {
                 <div className="space-y-3">
                   {formData.steps.map((step, index) => (
                     <div key={index} className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-teal-600 text-white flex items-center justify-center font-semibold">
+                      <div className="shrink-0 w-10 h-10 rounded-full bg-teal-600 text-white flex items-center justify-center font-semibold">
                         {index + 1}
                       </div>
                       <input
@@ -327,7 +317,7 @@ export default function ShareRemedyForm() {
                         <button
                           type="button"
                           onClick={() => removeStep(index)}
-                          className="flex-shrink-0 text-red-500 hover:text-red-700 transition"
+                          className="shrink-0 text-red-500 hover:text-red-700 transition"
                         >
                           <X className="w-5 h-5" />
                         </button>
