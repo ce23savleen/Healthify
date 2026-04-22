@@ -5,137 +5,92 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Star, MessageCircle, Share2, CheckCircle, AlertCircle, TrendingUp, Sparkles, ShieldCheck, Flame, Clock, ArrowRight, BookOpen } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
+import type { RemedyRecord } from "@/types/remedy"
 
 type FilterType = "trending" | "new" | "verified"
 
-// Sample community remedies data
-const defaultCommunityRemedies = [
-  {
-    id: 1,
-    title: "Ginger Tea for Nausea",
-    author: "Dr. Sarah Johnson",
+interface CommunityRemedy {
+  id: number
+  title: string
+  author: string
+  avatar: string
+  ailment: string
+  image: string
+  description: string
+  steps: string[]
+  likes: number
+  comments: number
+  endorsements: number
+  isVerified: boolean
+  isNew: boolean
+  timestamp: string
+  createdAt: string
+}
+
+interface CommunityFeedProps {
+  initialRemedies?: RemedyRecord[]
+}
+
+function toStableNumericId(value: string): number {
+  let hash = 0
+
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) | 0
+  }
+
+  return Math.abs(hash) || 1
+}
+
+function toDisplayDate(isoDate: string): string {
+  const parsed = new Date(isoDate)
+  if (Number.isNaN(parsed.getTime())) {
+    return "Unknown date"
+  }
+
+  return parsed.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  })
+}
+
+function toRemedyImage(remedy: RemedyRecord): string {
+  const titleLower = `${remedy.title} ${remedy.description}`.toLowerCase()
+  const imageMap: Record<string, string> = {
+    ginger: "/remedy-ginger-tea.png",
+    honey: "/remedy-honey-lemon.png",
+    turmeric: "/remedy-turmeric-milk.png",
+    aloe: "/remedy-aloe-vera-skin.png",
+    peppermint: "/remedy-peppermint-oil.png",
+    mint: "/remedy-peppermint-oil.png",
+    vinegar: "/remedy-apple-cider.png",
+  }
+
+  return Object.entries(imageMap).find(([key]) => titleLower.includes(key))?.[1] || "/herbs-and-natural-remedies-on-table.jpg"
+}
+
+function mapRemedyRecordToCommunityRemedy(remedy: RemedyRecord): CommunityRemedy {
+  const createdAt = new Date(remedy.createdAt)
+  const hoursSinceCreated = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60)
+
+  return {
+    id: toStableNumericId(remedy.id),
+    title: remedy.title,
+    author: remedy.authorName,
     avatar: "/placeholder-user.jpg",
-    ailment: "Nausea",
-    image: "/remedy-ginger-tea.png",
-    description:
-      "Fresh ginger tea has been proven to reduce nausea effectively. Boil fresh ginger slices in water for 10 minutes and drink warm.",
-    steps: [
-      "Slice fresh ginger root into thin pieces",
-      "Boil water and add ginger slices",
-      "Simmer for 10 minutes",
-      "Strain and drink warm with honey if desired",
-    ],
-    likes: 542,
-    comments: 23,
-    isVerified: true,
-    isNew: false,
-    timestamp: "2 days ago",
-  },
-  {
-    id: 2,
-    title: "Honey and Lemon for Sore Throat",
-    author: "Emma Wilson",
-    avatar: "/placeholder-user.jpg",
-    ailment: "Sore Throat",
-    image: "/remedy-honey-lemon.png",
-    description:
-      "Mix warm water with honey and fresh lemon juice. This combination soothes the throat and provides relief from pain.",
-    steps: [
-      "Warm a glass of water (not boiling)",
-      "Add 1 tablespoon of raw honey",
-      "Squeeze fresh lemon juice",
-      "Mix well and drink slowly",
-    ],
-    likes: 487,
-    comments: 18,
-    isVerified: false,
-    isNew: false,
-    timestamp: "3 days ago",
-  },
-  {
-    id: 3,
-    title: "Turmeric Milk for Joint Pain",
-    author: "Dr. Rajesh Kumar",
-    avatar: "/placeholder-user.jpg",
-    ailment: "Joint Pain",
-    image: "/remedy-turmeric-milk.png",
-    description:
-      "Golden milk with turmeric and black pepper reduces inflammation. Drink before bed for best results. The curcumin in turmeric is highly effective.",
-    steps: [
-      "Heat 1 cup of milk",
-      "Add 1/2 teaspoon turmeric powder",
-      "Add a pinch of black pepper",
-      "Stir well and drink warm before bed",
-    ],
-    likes: 623,
-    comments: 31,
-    isVerified: true,
-    isNew: false,
-    timestamp: "1 day ago",
-  },
-  {
-    id: 4,
-    title: "Aloe Vera for Skin Irritation",
-    author: "Michael Chen",
-    avatar: "/placeholder-user.jpg",
-    ailment: "Skin Irritation",
-    image: "/remedy-aloe-vera-skin.png",
-    description: "Fresh aloe vera gel applied directly to irritated skin provides instant cooling and healing relief.",
-    steps: [
-      "Extract fresh aloe vera gel from the leaf",
-      "Clean the affected area gently",
-      "Apply aloe vera gel directly",
-      "Leave for 15-20 minutes and rinse",
-    ],
-    likes: 234,
-    comments: 12,
-    isVerified: false,
-    isNew: true,
-    timestamp: "Just now",
-  },
-  {
-    id: 5,
-    title: "Apple Cider Vinegar for Digestion",
-    author: "Dr. Lisa Anderson",
-    avatar: "/placeholder-user.jpg",
-    ailment: "Indigestion",
-    image: "/remedy-apple-cider.png",
-    description:
-      "One tablespoon of apple cider vinegar in warm water before meals aids digestion and reduces bloating. Clinically proven benefits.",
-    steps: [
-      "Mix 1 tablespoon of apple cider vinegar in warm water",
-      "Add a teaspoon of honey",
-      "Drink 15 minutes before meals",
-      "Repeat 2-3 times daily",
-    ],
-    likes: 456,
-    comments: 27,
-    isVerified: true,
-    isNew: false,
-    timestamp: "5 hours ago",
-  },
-  {
-    id: 6,
-    title: "Peppermint Oil for Headaches",
-    author: "James Wilson",
-    avatar: "/placeholder-user.jpg",
-    ailment: "Headache",
-    image: "/remedy-peppermint-oil.png",
-    description:
-      "Apply diluted peppermint oil to temples and forehead for quick headache relief. Works within 15 minutes.",
-    steps: [
-      "Dilute peppermint oil with coconut oil (1:3 ratio)",
-      "Apply to temples gently",
-      "Massage forehead in circular motions",
-      "Relax in a quiet place for 15 minutes",
-    ],
-    likes: 389,
-    comments: 19,
-    isVerified: false,
-    isNew: true,
-    timestamp: "2 hours ago",
-  },
-]
+    ailment: remedy.ailment,
+    image: toRemedyImage(remedy),
+    description: remedy.description,
+    steps: remedy.steps,
+    likes: remedy.likes,
+    comments: 0,
+    endorsements: remedy.endorsements,
+    isVerified: remedy.endorsements > 0,
+    isNew: Number.isFinite(hoursSinceCreated) ? hoursSinceCreated <= 24 : false,
+    timestamp: toDisplayDate(remedy.createdAt),
+    createdAt: remedy.createdAt,
+  }
+}
 
 interface Comment {
   id: number
@@ -144,34 +99,38 @@ interface Comment {
   timestamp: string
 }
 
-export default function CommunityFeed() {
+export default function CommunityFeed({ initialRemedies = [] }: CommunityFeedProps) {
   const { isLoggedIn, user } = useAuth()
-  const [filter, setFilter] = useState<FilterType>("trending")
+  const [filter, setFilter] = useState<FilterType>("new")
   const [userRatings, setUserRatings] = useState<Record<number, number>>({})
   const [hoveredStar, setHoveredStar] = useState<{ remedyId: number; star: number } | null>(null)
-  const [communityRemedies, setCommunityRemedies] = useState(defaultCommunityRemedies)
-  const [selectedRemedy, setSelectedRemedy] = useState<(typeof defaultCommunityRemedies)[0] | null>(null)
+  const mappedInitialRemedies = initialRemedies.map((remedy) => mapRemedyRecordToCommunityRemedy(remedy))
+  const communityRemedies = mappedInitialRemedies
+  const [selectedRemedy, setSelectedRemedy] = useState<CommunityRemedy | null>(null)
   const [remedyComments, setRemedyComments] = useState<Record<number, Comment[]>>({})
   const [commentText, setCommentText] = useState("")
 
   useEffect(() => {
-    const userSubmittedRemedies = JSON.parse(localStorage.getItem("userSubmittedRemedies") || "[]")
-    if (userSubmittedRemedies.length > 0) {
-      setCommunityRemedies([...userSubmittedRemedies, ...defaultCommunityRemedies])
-    }
     const savedComments = localStorage.getItem("remedyComments")
     if (savedComments) {
       setRemedyComments(JSON.parse(savedComments))
     }
   }, [])
 
-  const getFilteredRemedies = () => {
+  const getFilteredRemedies = (): CommunityRemedy[] => {
     let filtered = [...communityRemedies]
 
     if (filter === "trending") {
       filtered.sort((a, b) => b.likes - a.likes)
     } else if (filter === "new") {
       filtered.sort((a, b) => {
+        const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0
+
+        if (aDate > 0 && bDate > 0) {
+          return bDate - aDate
+        }
+
         const timeOrder: Record<string, number> = {
           "Just now": 0,
           "2 hours ago": 1,
@@ -327,8 +286,21 @@ export default function CommunityFeed() {
             </div>
 
             {/* Remedies Feed — Modern Cards with Images */}
-            <div className="grid gap-6 md:grid-cols-2">
-              {filteredRemedies.map((remedy, index) => (
+            {communityRemedies.length === 0 ? (
+              <Card>
+                <CardContent className="py-10 text-center">
+                  <p className="text-muted-foreground">No community remedies shared yet. Be the first!</p>
+                </CardContent>
+              </Card>
+            ) : filteredRemedies.length === 0 ? (
+              <Card>
+                <CardContent className="py-10 text-center">
+                  <p className="text-muted-foreground">No remedies match the selected filter.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2">
+                {filteredRemedies.map((remedy, index) => (
                 <Card
                   key={remedy.id}
                   className="group overflow-hidden border-0 cursor-pointer"
@@ -398,7 +370,7 @@ export default function CommunityFeed() {
                   <CardContent className="p-5">
                     {/* Header with Author Info */}
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-emerald-100 flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-emerald-100 shrink-0">
                         <img
                           src={remedy.avatar || "/placeholder-user.jpg"}
                           alt={remedy.author}
@@ -408,7 +380,7 @@ export default function CommunityFeed() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           <h3 className="font-semibold text-foreground text-sm truncate">{remedy.author}</h3>
-                          {remedy.isVerified && <CheckCircle className="w-3.5 h-3.5 text-teal-600 flex-shrink-0" />}
+                          {remedy.isVerified && <CheckCircle className="w-3.5 h-3.5 text-teal-600 shrink-0" />}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="w-3 h-3" />
@@ -462,6 +434,10 @@ export default function CommunityFeed() {
                           <MessageCircle className="w-4.5 h-4.5" />
                           <span className="font-medium">{remedy.comments + (remedyComments[remedy.id]?.length || 0)}</span>
                         </button>
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <ShieldCheck className="w-4 h-4" />
+                          <span className="font-medium">{remedy.endorsements}</span>
+                        </div>
                       </div>
                       <button
                         onClick={(e) => e.stopPropagation()}
@@ -472,11 +448,13 @@ export default function CommunityFeed() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             {/* Load More Button */}
-            <div className="text-center mt-14">
+            {communityRemedies.length > 0 && filteredRemedies.length > 0 && (
+              <div className="text-center mt-14">
               <button
                 className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold text-teal-700 transition-all duration-300 hover:gap-4"
                 style={{
@@ -501,7 +479,8 @@ export default function CommunityFeed() {
                 Load More Remedies
                 <ArrowRight className="w-4 h-4" />
               </button>
-            </div>
+              </div>
+            )}
           </>
         ) : (
           /* Remedy Detail View */
@@ -571,6 +550,10 @@ export default function CommunityFeed() {
                       <Clock className="w-3 h-3" />
                       {selectedRemedy.timestamp}
                     </span>
+                    <span className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                      <ShieldCheck className="w-3 h-3" />
+                      {selectedRemedy.endorsements} endorsements
+                    </span>
                   </div>
                 </div>
 
@@ -592,7 +575,7 @@ export default function CommunityFeed() {
                   <div className="space-y-3">
                     {selectedRemedy.steps.map((step, index) => (
                       <div key={index} className="flex items-start gap-4 p-3 rounded-xl transition-colors hover:bg-emerald-50/60">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-white" style={{
+                        <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-white" style={{
                           background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
                           boxShadow: "0 2px 6px rgba(5, 150, 105, 0.3)"
                         }}>
@@ -610,7 +593,7 @@ export default function CommunityFeed() {
                   border: "1px solid #fde68a",
                 }}>
                   <div className="flex gap-3">
-                    <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-amber-900 mb-1">Important Disclaimer</p>
                       <p className="text-amber-800 text-sm leading-relaxed">

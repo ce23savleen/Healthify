@@ -6,16 +6,185 @@ import { Button } from "@/components/ui/button"
 import { MessageCircle, Share2, Bookmark, AlertCircle, X, ShieldCheck, BadgeCheck, Star, Clock, Users, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
-import mockAilmentsData, { type MockAilment } from "@/data/mockAilmentsData"
+import mockAilmentsData, { type MockAilment, type MockRemedy } from "@/data/mockAilmentsData"
 import ailmentDetailsData from "@/data/ailment-details"
 import remediesData from "@/data/remedies"
+import type { RemedyRecord } from "@/types/remedy"
+
+interface RenderableRemedy {
+  id: number
+  title: string
+  author: string
+  description: string
+  likes: number
+  verifiedBy: string[]
+  userContributed: boolean
+  steps: string[]
+  createdAt: string
+  endorsements: number
+}
+
+interface SubmittedRemedyShape {
+  id?: unknown
+  ailment?: unknown
+  title?: unknown
+  author?: unknown
+  description?: unknown
+  likes?: unknown
+  verifiedBy?: unknown
+  userContributed?: unknown
+  steps?: unknown
+  createdAt?: unknown
+}
+
+function toNumber(value: unknown, fallbackValue = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallbackValue
+}
+
+function toStringValue(value: unknown, fallbackValue = ""): string {
+  return typeof value === "string" ? value : fallbackValue
+}
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value.filter((entry): entry is string => typeof entry === "string")
+}
+
+function toIsoDateString(value: unknown): string {
+  if (typeof value === "string") {
+    const parsed = new Date(value)
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString()
+    }
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString()
+  }
+
+  return new Date(0).toISOString()
+}
+
+function toStableNumericId(value: string): number {
+  let hash = 0
+
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) | 0
+  }
+
+  return Math.abs(hash) || 1
+}
+
+function mapRemedyRecordToRenderable(remedy: RemedyRecord): RenderableRemedy {
+  return {
+    id: toStableNumericId(remedy.id),
+    title: remedy.title,
+    author: remedy.authorName,
+    description: remedy.description,
+    likes: remedy.likes,
+    verifiedBy: remedy.endorsedBy,
+    userContributed: true,
+    steps: remedy.steps,
+    createdAt: remedy.createdAt,
+    endorsements: remedy.endorsements,
+  }
+}
+
+function mapMockRemedyToRenderable(remedy: MockRemedy): RenderableRemedy {
+  return {
+    id: remedy.id,
+    title: remedy.title,
+    author: remedy.author,
+    description: remedy.description,
+    likes: remedy.likes,
+    verifiedBy: remedy.verifiedBy,
+    userContributed: remedy.userContributed,
+    steps: remedy.steps,
+    createdAt: new Date(0).toISOString(),
+    endorsements: remedy.verifiedBy.length,
+  }
+}
+
+function mapLegacyRemedyToRenderable(remedy: unknown, index: number): RenderableRemedy {
+  const legacy = remedy as SubmittedRemedyShape
+  const rawId = legacy.id
+  const derivedId = typeof rawId === "number"
+    ? rawId
+    : typeof rawId === "string"
+      ? toStableNumericId(rawId)
+      : 900000 + index
+
+  const verifiedBy = toStringArray(legacy.verifiedBy)
+  const normalizedVerifiedBy = verifiedBy.length > 0
+    ? verifiedBy
+    : legacy.userContributed === false
+      ? ["doc_legacy"]
+      : []
+
+  return {
+    id: derivedId,
+    title: toStringValue(legacy.title, "Untitled Remedy"),
+    author: toStringValue(legacy.author, "Anonymous"),
+    description: toStringValue(legacy.description, ""),
+    likes: toNumber(legacy.likes),
+    verifiedBy: normalizedVerifiedBy,
+    userContributed: typeof legacy.userContributed === "boolean" ? legacy.userContributed : true,
+    steps: toStringArray(legacy.steps),
+    createdAt: toIsoDateString(legacy.createdAt),
+    endorsements: normalizedVerifiedBy.length,
+  }
+}
+
+function mapSubmittedRemedyToRenderable(remedy: SubmittedRemedyShape, index: number): RenderableRemedy {
+  const rawId = remedy.id
+  const derivedId = typeof rawId === "number"
+    ? rawId
+    : typeof rawId === "string"
+      ? toStableNumericId(rawId)
+      : 700000 + index
+
+  const verifiedBy = toStringArray(remedy.verifiedBy)
+
+  return {
+    id: derivedId,
+    title: toStringValue(remedy.title, "Untitled Remedy"),
+    author: toStringValue(remedy.author, "Anonymous"),
+    description: toStringValue(remedy.description, ""),
+    likes: toNumber(remedy.likes),
+    verifiedBy,
+    userContributed: typeof remedy.userContributed === "boolean" ? remedy.userContributed : true,
+    steps: toStringArray(remedy.steps),
+    createdAt: toIsoDateString(remedy.createdAt),
+    endorsements: verifiedBy.length,
+  }
+}
+
+function formatRemedyDate(isoDate: string): string {
+  const parsedDate = new Date(isoDate)
+
+  if (Number.isNaN(parsedDate.getTime()) || parsedDate.getTime() === 0) {
+    return new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+  }
+
+  return parsedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+}
 
 interface AilmentDetailsProps {
   slug: string
   fallbackAilment?: MockAilment | null
+  recommendedRemedies?: RemedyRecord[]
+  useDatabaseRemedies?: boolean
 }
 
-export default function AilmentDetails({ slug, fallbackAilment = null }: AilmentDetailsProps) {
+export default function AilmentDetails({
+  slug,
+  fallbackAilment = null,
+  recommendedRemedies = [],
+  useDatabaseRemedies = false,
+}: AilmentDetailsProps) {
   const { isLoggedIn, user } = useAuth()
   const [userRatings, setUserRatings] = useState<Record<number, number>>({})
   const [hoveredStar, setHoveredStar] = useState<{ remedyId: number; star: number } | null>(null)
@@ -25,8 +194,8 @@ export default function AilmentDetails({ slug, fallbackAilment = null }: Ailment
   const [commentText, setCommentText] = useState("")
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [showNotification, setShowNotification] = useState<{ type: string; message: string } | null>(null)
-  const [selectedRemedy, setSelectedRemedy] = useState<any>(null)
-  const [userSubmittedRemedies, setUserSubmittedRemedies] = useState<any[]>([])
+  const [selectedRemedy, setSelectedRemedy] = useState<RenderableRemedy | null>(null)
+  const [userSubmittedRemedies, setUserSubmittedRemedies] = useState<RenderableRemedy[]>([])
   const [endorsedRemedies, setEndorsedRemedies] = useState<number[]>([])
 
   const ailmentKey = slug.toLowerCase().replace(/\s+/g, "-")
@@ -68,31 +237,44 @@ export default function AilmentDetails({ slug, fallbackAilment = null }: Ailment
   }
 
   useEffect(() => {
-    const submitted = JSON.parse(localStorage.getItem("userSubmittedRemedies") || "[]")
-    const filtered = submitted.filter(
-      (remedy: any) => remedy.ailment.toLowerCase() === ailment.name.toLowerCase()
-    )
+    const submitted = JSON.parse(localStorage.getItem("userSubmittedRemedies") || "[]") as unknown
+    const submittedList = Array.isArray(submitted) ? submitted : []
+    const filtered = submittedList
+      .filter((remedy): remedy is SubmittedRemedyShape => {
+        if (!remedy || typeof remedy !== "object") {
+          return false
+        }
+
+        const remedyAilment = (remedy as SubmittedRemedyShape).ailment
+        return typeof remedyAilment === "string" && remedyAilment.toLowerCase() === ailment.name.toLowerCase()
+      })
+      .map((remedy, index) => mapSubmittedRemedyToRenderable(remedy, index))
+
     setUserSubmittedRemedies(filtered)
   }, [ailment.name])
 
   // Build remedies from mock data or legacy data
-  const buildRemedies = () => {
+  const buildRemedies = (): RenderableRemedy[] => {
     if (mockAilment) {
-      return mockAilment.remedies.map((r) => ({
-        ...r,
-        isVerified: r.verifiedBy.length >= 1,
-      }))
+      return mockAilment.remedies.map((remedy) => mapMockRemedyToRenderable(remedy))
     }
+
     const legacyRemedies = remediesData[ailmentKey] || []
-    return legacyRemedies.map((r: any) => ({
-      ...r,
-      verifiedBy: r.isVerified ? ["doc_legacy"] : [],
-    }))
+    return legacyRemedies.map((remedy, index) => mapLegacyRemedyToRenderable(remedy, index))
   }
 
+  const mappedRecommendedRemedies = recommendedRemedies.map((remedy) => mapRemedyRecordToRenderable(remedy))
+  const shouldUseDatabaseRemedies = useDatabaseRemedies
+
   const defaultRemedies = buildRemedies()
-  const allRemedies = [...defaultRemedies, ...userSubmittedRemedies]
-  const remedies = allRemedies.sort((a, b) => b.likes - a.likes)
+  const fallbackRemedies = [...defaultRemedies, ...userSubmittedRemedies]
+
+  const fallbackRecommendedRemedies = fallbackRemedies
+    .filter((remedy) => remedy.endorsements > 0 || remedy.verifiedBy.length > 0)
+    .sort((a, b) => b.likes - a.likes)
+
+  const remedies = shouldUseDatabaseRemedies ? mappedRecommendedRemedies : fallbackRecommendedRemedies
+  const allVisibleRemedies = [...remedies]
 
   useEffect(() => {
     const saved = localStorage.getItem("savedRemedies")
@@ -120,7 +302,7 @@ export default function AilmentDetails({ slug, fallbackAilment = null }: Ailment
     })
   }
 
-  const getAverageRating = (remedy: any, remedyId: number): number => {
+  const getAverageRating = (remedy: RenderableRemedy, remedyId: number): number => {
     const baseRating = Math.min(5, Math.max(3.0, 3.0 + (remedy.likes / 250)))
     const userRating = userRatings[remedyId]
     if (userRating) {
@@ -141,7 +323,7 @@ export default function AilmentDetails({ slug, fallbackAilment = null }: Ailment
               id: remedyId,
               title: remedyTitle,
               ailment: ailment.name,
-              author: remedies.find((r) => r.id === remedyId)?.author || "Unknown",
+              author: allVisibleRemedies.find((r) => r.id === remedyId)?.author || "Unknown",
               date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
             })
           )
@@ -202,12 +384,12 @@ export default function AilmentDetails({ slug, fallbackAilment = null }: Ailment
     setTimeout(() => setShowNotification(null), 3000)
   }
 
-  const getVerifiedCount = (remedy: any): number => {
+  const getVerifiedCount = (remedy: RenderableRemedy): number => {
     if (remedy.verifiedBy) return remedy.verifiedBy.length
     return 0
   }
 
-  const hasCurrentDoctorEndorsed = (remedy: any): boolean => {
+  const hasCurrentDoctorEndorsed = (remedy: RenderableRemedy): boolean => {
     if (endorsedRemedies.includes(remedy.id)) return true
     if (remedy.verifiedBy && remedy.verifiedBy.includes(currentDoctorId)) return true
     return false
@@ -425,7 +607,7 @@ export default function AilmentDetails({ slug, fallbackAilment = null }: Ailment
 
                     {/* Author */}
                     <p className="text-xs" style={{ color: "#9ca3af" }}>
-                      By {remedy.author} • {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      By {remedy.author} • {formatRemedyDate(remedy.createdAt)}
                     </p>
 
                     {/* Ingredient Tags */}
@@ -596,7 +778,11 @@ export default function AilmentDetails({ slug, fallbackAilment = null }: Ailment
                     <span>By {selectedRemedy.author}</span>
                     <span>•</span>
                     <span>
-                      {new Date().toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" })}
+                      {new Date(selectedRemedy.createdAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                      })}
                     </span>
                   </div>
 
