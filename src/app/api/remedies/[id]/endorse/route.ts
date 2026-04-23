@@ -25,12 +25,12 @@ function toRemedyRecord(remedy: RemedyDocument): RemedyRecord {
 
 export async function POST(
   request: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<{ remedy: RemedyRecord } | RemedyApiError>> {
   try {
     await connectToDatabase()
 
-    const remedyId = context.params.id
+    const { id: remedyId } = await context.params
     if (!Types.ObjectId.isValid(remedyId)) {
       return NextResponse.json({ error: "Invalid remedy id" }, { status: 400 })
     }
